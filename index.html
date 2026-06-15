@@ -1,1 +1,1299 @@
-PLACEHOLDER_B64
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>NEON RUSH 2.0 - GTA Style</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{background:#000;overflow:hidden;font-family:Arial,sans-serif;touch-action:none;}
+#gameCanvas{display:block;width:100vw;height:100vh;}
+
+/* HUD */
+#hud{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:100;}
+#topBar{position:fixed;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:flex-start;z-index:101;}
+#moneyDisplay{background:rgba(0,0,0,0.8);border:2px solid #00ff88;border-radius:10px;padding:8px 16px;color:#00ff88;font-size:20px;font-weight:bold;text-shadow:0 0 10px #00ff88;}
+#wantedDisplay{display:flex;gap:4px;align-items:center;background:rgba(0,0,0,0.8);border:2px solid #ff4444;border-radius:10px;padding:8px 12px;}
+.star{font-size:20px;color:#444;}
+.star.active{color:#ffdd00;text-shadow:0 0 8px #ffdd00;}
+#speedDisplay{background:rgba(0,0,0,0.8);border:2px solid #00aaff;border-radius:10px;padding:8px 16px;color:#00aaff;font-size:18px;text-align:center;}
+
+/* Mission Box */
+#missionBox{position:fixed;top:80px;left:10px;background:rgba(0,0,0,0.85);border:2px solid #ffaa00;border-radius:10px;padding:10px 14px;color:#ffaa00;font-size:14px;max-width:220px;z-index:101;display:none;}
+#missionTitle{font-size:16px;font-weight:bold;margin-bottom:4px;}
+
+/* Minimap */
+#minimap{position:fixed;bottom:100px;right:10px;width:120px;height:120px;border:2px solid #00ff88;border-radius:8px;overflow:hidden;z-index:101;}
+#minimapCanvas{width:120px;height:120px;}
+
+/* Bars */
+#barsContainer{position:fixed;bottom:100px;left:10px;display:flex;flex-direction:column;gap:6px;z-index:101;}
+.bar-container{display:flex;align-items:center;gap:6px;}
+.bar-label{color:#fff;font-size:11px;width:40px;text-shadow:0 0 5px rgba(255,255,255,0.5);}
+.bar{width:100px;height:12px;background:rgba(0,0,0,0.6);border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,0.3);}
+.bar-fill{height:100%;border-radius:6px;transition:width 0.2s;}
+#healthFill{background:linear-gradient(90deg,#ff4444,#ff6666);}
+#nitroFill{background:linear-gradient(90deg,#00aaff,#44ddff);}
+#fuelFill{background:linear-gradient(90deg,#ffaa00,#ffdd00);}
+
+/* Mobile Controls */
+#controls{position:fixed;bottom:0;left:0;right:0;height:90px;display:flex;justify-content:space-between;align-items:center;padding:0 10px;z-index:200;background:rgba(0,0,0,0.3);}
+#leftControls{display:flex;gap:8px;}
+#rightControls{display:flex;gap:8px;}
+.ctrl-btn{width:65px;height:65px;border-radius:12px;border:2px solid rgba(255,255,255,0.4);background:rgba(0,0,0,0.6);color:#fff;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;-webkit-user-select:none;active:transform:scale(0.95);}
+.ctrl-btn:active{opacity:0.7;transform:scale(0.93);}
+#btnGas{border-color:#00ff88;color:#00ff88;font-size:28px;}
+#btnBrake{border-color:#ff4444;color:#ff4444;}
+#btnLeft{border-color:#00aaff;color:#00aaff;}
+#btnRight{border-color:#00aaff;color:#00aaff;}
+#btnNitro{border-color:#ff00ff;color:#ff00ff;font-size:13px;font-weight:bold;}
+#btnHand{border-color:#ffaa00;color:#ffaa00;font-size:12px;}
+
+/* Screens */
+.screen{position:fixed;top:0;left:0;width:100%;height:100%;z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+#menuScreen{background:radial-gradient(ellipse at center, #0a0a2e 0%, #000 70%);}
+#menuScreen canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
+.menu-content{position:relative;z-index:1;text-align:center;}
+.game-title{font-size:52px;font-weight:900;color:#00ff88;text-shadow:0 0 30px #00ff88,0 0 60px #00ff88;letter-spacing:4px;margin-bottom:8px;}
+.game-subtitle{font-size:18px;color:#aaa;margin-bottom:40px;letter-spacing:2px;}
+.menu-btn{display:block;width:240px;margin:10px auto;padding:16px;border-radius:12px;font-size:18px;font-weight:bold;cursor:pointer;border:2px solid;transition:all 0.2s;text-align:center;}
+.menu-btn:active{transform:scale(0.96);}
+#btnPlay{background:rgba(0,255,136,0.15);border-color:#00ff88;color:#00ff88;}
+#btnMissions{background:rgba(255,170,0,0.15);border-color:#ffaa00;color:#ffaa00;}
+#btnGarage{background:rgba(0,170,255,0.15);border-color:#00aaff;color:#00aaff;}
+#btnSettings{background:rgba(255,255,255,0.1);border-color:#888;color:#888;}
+
+/* Mission Screen */
+#missionScreen{background:rgba(0,0,0,0.95);z-index:600;}
+.missions-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:400px;width:90%;margin:20px 0;max-height:60vh;overflow-y:auto;}
+.mission-card{background:rgba(255,255,255,0.05);border:2px solid;border-radius:10px;padding:12px;cursor:pointer;transition:all 0.2s;}
+.mission-card:active{transform:scale(0.97);}
+.mission-card.easy{border-color:#00ff88;}
+.mission-card.medium{border-color:#ffaa00;}
+.mission-card.hard{border-color:#ff4444;}
+.mission-card.locked{border-color:#444;opacity:0.5;cursor:not-allowed;}
+.mission-name{font-size:13px;font-weight:bold;color:#fff;margin-bottom:4px;}
+.mission-reward{font-size:12px;color:#00ff88;}
+.mission-diff{font-size:10px;margin-top:4px;}
+.screen-title{font-size:28px;font-weight:bold;color:#fff;margin-bottom:10px;}
+.close-btn{padding:12px 30px;background:rgba(255,0,0,0.2);border:2px solid #ff4444;border-radius:10px;color:#ff4444;font-size:16px;cursor:pointer;margin-top:10px;}
+
+/* Garage Screen */
+#garageScreen{background:rgba(0,0,0,0.95);z-index:600;}
+.cars-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:400px;width:90%;margin:20px 0;max-height:60vh;overflow-y:auto;}
+.car-card{background:rgba(255,255,255,0.05);border:2px solid #444;border-radius:10px;padding:12px;cursor:pointer;text-align:center;transition:all 0.2s;}
+.car-card.owned{border-color:#00ff88;}
+.car-card.selected{border-color:#ffaa00;background:rgba(255,170,0,0.1);}
+.car-emoji{font-size:36px;margin-bottom:6px;}
+.car-name{font-size:13px;font-weight:bold;color:#fff;}
+.car-price{font-size:12px;color:#00ff88;}
+.car-stats{font-size:10px;color:#aaa;margin-top:4px;}
+
+/* Notification */
+#notification{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.9);border:2px solid #00ff88;border-radius:12px;padding:20px 30px;color:#00ff88;font-size:18px;font-weight:bold;text-align:center;z-index:800;display:none;animation:pulse 0.3s ease;}
+@keyframes pulse{0%{transform:translate(-50%,-50%) scale(0.8);}100%{transform:translate(-50%,-50%) scale(1);}}
+
+/* Quit Dialog */
+#quitDialog{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;border:2px solid #ff4444;border-radius:15px;padding:30px;text-align:center;z-index:900;display:none;}
+#quitDialog h3{color:#fff;margin-bottom:20px;font-size:20px;}
+.quit-btns{display:flex;gap:15px;justify-content:center;}
+.quit-btn{padding:12px 25px;border-radius:10px;font-size:16px;cursor:pointer;font-weight:bold;}
+#quitYes{background:#ff4444;border:none;color:#fff;}
+#quitNo{background:#444;border:none;color:#fff;}
+
+/* Pause */
+#pauseBtn{position:fixed;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);border:2px solid #666;border-radius:8px;color:#fff;padding:6px 16px;font-size:13px;cursor:pointer;z-index:102;}
+
+/* Loading */
+#loadingScreen{background:#000;z-index:1000;}
+.loading-bar-bg{width:300px;height:20px;background:#222;border-radius:10px;overflow:hidden;margin:20px 0;}
+.loading-bar-fill{height:100%;background:linear-gradient(90deg,#00ff88,#00aaff);border-radius:10px;transition:width 0.1s;width:0%;}
+.loading-title{font-size:40px;font-weight:900;color:#00ff88;text-shadow:0 0 20px #00ff88;margin-bottom:10px;}
+.loading-sub{color:#888;font-size:14px;}
+</style>
+</head>
+<body>
+
+<!-- Canvas -->
+<canvas id="gameCanvas"></canvas>
+
+<!-- Loading Screen -->
+<div class="screen" id="loadingScreen">
+  <div class="loading-title">NEON RUSH 2.0</div>
+  <div class="loading-sub">Loading Neo City...</div>
+  <div class="loading-bar-bg"><div class="loading-bar-fill" id="loadFill"></div></div>
+  <div id="loadPct" style="color:#00ff88;font-size:18px;">0%</div>
+</div>
+
+<!-- Menu Screen -->
+<div class="screen" id="menuScreen" style="display:none;">
+  <canvas id="menuBg" style="position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>
+  <div class="menu-content">
+    <div class="game-title">NEON RUSH</div>
+    <div class="game-subtitle">2.0 — Neo City Awaits</div>
+    <div class="menu-btn" id="btnPlay">🚗 PLAY NOW</div>
+    <div class="menu-btn" id="btnMissions">📋 MISSIONS</div>
+    <div class="menu-btn" id="btnGarage">🏎️ GARAGE</div>
+    <div class="menu-btn" id="btnSettings">⚙️ SETTINGS</div>
+    <div style="color:#666;font-size:12px;margin-top:20px;">💰 Cash: <span id="menuMoney" style="color:#00ff88;">$5,000</span></div>
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="hud" style="display:none;">
+  <div id="topBar">
+    <div id="moneyDisplay">💰 $<span id="moneyText">5000</span></div>
+    <div id="speedDisplay">🚗 <span id="speedText">0</span> km/h</div>
+    <div id="wantedDisplay">
+      <span>🚔</span>
+      <span class="star" id="s1">★</span>
+      <span class="star" id="s2">★</span>
+      <span class="star" id="s3">★</span>
+      <span class="star" id="s4">★</span>
+      <span class="star" id="s5">★</span>
+    </div>
+  </div>
+  <div id="missionBox">
+    <div id="missionTitle">🎯 Mission</div>
+    <div id="missionDesc">Find the target</div>
+    <div id="missionTimer" style="color:#ff4444;margin-top:4px;"></div>
+  </div>
+  <div id="barsContainer">
+    <div class="bar-container"><span class="bar-label">❤️ HP</span><div class="bar"><div class="bar-fill" id="healthFill" style="width:100%;"></div></div></div>
+    <div class="bar-container"><span class="bar-label">⚡ NOS</span><div class="bar"><div class="bar-fill" id="nitroFill" style="width:100%;"></div></div></div>
+    <div class="bar-container"><span class="bar-label">⛽ GAS</span><div class="bar"><div class="bar-fill" id="fuelFill" style="width:100%;"></div></div></div>
+  </div>
+  <div id="minimap"><canvas id="minimapCanvas" width="120" height="120"></canvas></div>
+  <button id="pauseBtn">⏸ MENU</button>
+</div>
+
+<!-- Mobile Controls -->
+<div id="controls" style="display:none;">
+  <div id="leftControls">
+    <div class="ctrl-btn" id="btnLeft">◀</div>
+    <div class="ctrl-btn" id="btnRight">▶</div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px;align-items:center;">
+    <div class="ctrl-btn" id="btnNitro">⚡NOS</div>
+    <div class="ctrl-btn" id="btnHand">🔒DRIFT</div>
+  </div>
+  <div id="rightControls">
+    <div class="ctrl-btn" id="btnGas">▲</div>
+    <div class="ctrl-btn" id="btnBrake">▼</div>
+  </div>
+</div>
+
+<!-- Mission Screen -->
+<div class="screen" id="missionScreen" style="display:none;">
+  <div class="screen-title">📋 MISSIONS</div>
+  <div class="missions-grid" id="missionsGrid"></div>
+  <div class="close-btn" id="closeMissions">✖ CLOSE</div>
+</div>
+
+<!-- Garage Screen -->
+<div class="screen" id="garageScreen" style="display:none;">
+  <div class="screen-title">🏎️ GARAGE</div>
+  <div style="color:#00ff88;margin-bottom:10px;">💰 $<span id="garageMoney">5000</span></div>
+  <div class="cars-grid" id="carsGrid"></div>
+  <div class="close-btn" id="closeGarage">✖ CLOSE</div>
+</div>
+
+<!-- Notification -->
+<div id="notification"></div>
+
+<!-- Quit Dialog -->
+<div id="quitDialog">
+  <h3>🚪 کیا آپ Game سے باہر جانا چاہتے ہیں؟</h3>
+  <div class="quit-btns">
+    <button class="quit-btn" id="quitYes">✅ YES</button>
+    <button class="quit-btn" id="quitNo">❌ NO</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// NEON RUSH 2.0 — COMPLETE GAME ENGINE
+// ============================================================
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Canvas Size
+function resize(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ============================================================
+// GAME STATE
+// ============================================================
+const G = {
+  state: 'loading',
+  money: 5000,
+  health: 100,
+  nitro: 100,
+  fuel: 100,
+  wantedLevel: 0,
+  currentCar: 0,
+  ownedCars: [0],
+  completedMissions: [],
+  activeMission: null,
+  missionTimer: 0,
+  score: 0,
+  totalDistance: 0,
+  paused: false,
+  keys: {},
+  touch: {gas:false, brake:false, left:false, right:false, nitro:false, hand:false}
+};
+
+// ============================================================
+// CARS DATA
+// ============================================================
+const CARS = [
+  {name:'Street Sedan', emoji:'🚗', color:'#4488ff', speed:5, handling:0.06, price:0, nitroMult:1.5},
+  {name:'Sports GT',    emoji:'🏎️', color:'#ff4444', speed:7, handling:0.07, price:8000, nitroMult:1.8},
+  {name:'Muscle Car',   emoji:'🚘', color:'#ff8800', speed:8, handling:0.05, price:12000, nitroMult:2.0},
+  {name:'Police Car',   emoji:'🚔', color:'#1144ff', speed:6.5, handling:0.065, price:15000, nitroMult:1.6},
+  {name:'Black Phantom',emoji:'🖤', color:'#222222', speed:9, handling:0.08, price:25000, nitroMult:2.2},
+  {name:'Neon Ghost',   emoji:'🔮', color:'#aa00ff', speed:10, handling:0.09, price:40000, nitroMult:2.5},
+  {name:'City Van',     emoji:'🚐', color:'#668844', speed:4, handling:0.04, price:5000, nitroMult:1.3},
+  {name:'SUV Beast',    emoji:'🚙', color:'#885522', speed:6, handling:0.055, price:10000, nitroMult:1.7},
+  {name:'Taxi King',    emoji:'🚕', color:'#ffdd00', speed:5.5, handling:0.06, price:3000, nitroMult:1.4},
+  {name:'Ghost Racer',  emoji:'💨', color:'#00ffff', speed:11, handling:0.1, price:60000, nitroMult:3.0},
+];
+
+// ============================================================
+// MISSIONS DATA
+// ============================================================
+const MISSIONS = [
+  {id:0, name:'پہلی Delivery', desc:'Target تک پہنچو!', diff:'easy', reward:500, time:60, type:'delivery', unlockAt:0},
+  {id:1, name:'Taxi Driver', desc:'5 سواریاں پہنچاؤ', diff:'easy', reward:800, time:90, type:'taxi', unlockAt:0},
+  {id:2, name:'سڑک کی Race', desc:'AI کو ہراؤ', diff:'easy', reward:1200, time:120, type:'race', unlockAt:1},
+  {id:3, name:'Police سے بھاگو', desc:'5 منٹ بچو', diff:'medium', reward:2000, time:300, type:'escape', unlockAt:2},
+  {id:4, name:'مجرم کا پیچھا', desc:'گینگسٹر کو پکڑو', diff:'medium', reward:2500, time:180, type:'chase', unlockAt:3},
+  {id:5, name:'Bank Heist', desc:'Bank لوٹو!', diff:'medium', reward:5000, time:240, type:'heist', unlockAt:4},
+  {id:6, name:'Boss Race', desc:'City Champion کو ہراؤ', diff:'hard', reward:7500, time:150, type:'race', unlockAt:5},
+  {id:7, name:'Helicopter سے بچو', desc:'ہیلی سے 10 منٹ', diff:'hard', reward:8000, time:600, type:'escape', unlockAt:6},
+  {id:8, name:'خفیہ Smuggling', desc:'بغیر پکڑے پہنچاؤ', diff:'hard', reward:10000, time:300, type:'delivery', unlockAt:7},
+  {id:9, name:'🏆 City King', desc:'Neo City فتح کرو!', diff:'hard', reward:50000, time:600, type:'boss', unlockAt:8},
+];
+
+// ============================================================
+// CITY MAP
+// ============================================================
+const MAP_SIZE = 3000;
+const BUILDINGS = [];
+const ROADS = [];
+const TREES = [];
+const ROAD_MARKS = [];
+
+function buildCity(){
+  // Main Roads - Horizontal
+  for(let y = 200; y < MAP_SIZE; y += 300){
+    ROADS.push({x:0, y:y-40, w:MAP_SIZE, h:80, type:'main'});
+  }
+  // Main Roads - Vertical  
+  for(let x = 200; x < MAP_SIZE; x += 300){
+    ROADS.push({x:x-40, y:0, w:80, h:MAP_SIZE, type:'main'});
+  }
+
+  // Buildings in blocks
+  for(let bx = 0; bx < MAP_SIZE; bx += 300){
+    for(let by = 0; by < MAP_SIZE; by += 300){
+      let count = 2 + Math.floor(Math.random()*3);
+      for(let i = 0; i < count; i++){
+        let bw = 50 + Math.random()*80;
+        let bh = 50 + Math.random()*80;
+        let px = bx + 50 + Math.random()*(200-bw);
+        let py = by + 50 + Math.random()*(200-bh);
+        let h = 30 + Math.random()*120;
+        let colors = ['#1a1a3e','#2a1a1a','#1a2a1a','#2a2a1a','#1a1a4a','#3a1a2a'];
+        let c = colors[Math.floor(Math.random()*colors.length)];
+        let windows = Math.random() > 0.3;
+        BUILDINGS.push({x:px, y:py, w:bw, h:bh, height:h, color:c, windows:windows, 
+          winColor: Math.random()>0.4 ? '#ffff88' : '#ff8800',
+          neon: Math.random()>0.6});
+      }
+    }
+  }
+
+  // Trees
+  for(let i = 0; i < 300; i++){
+    let tx = Math.random()*MAP_SIZE;
+    let ty = Math.random()*MAP_SIZE;
+    let onRoad = false;
+    for(let r of ROADS){
+      if(tx > r.x-20 && tx < r.x+r.w+20 && ty > r.y-20 && ty < r.y+r.h+20){
+        onRoad = true; break;
+      }
+    }
+    if(!onRoad) TREES.push({x:tx, y:ty, r:8+Math.random()*12, color:Math.random()>0.3?'#1a4a1a':'#2a6a2a'});
+  }
+}
+buildCity();
+
+// ============================================================
+// PLAYER
+// ============================================================
+const player = {
+  x: MAP_SIZE/2, y: MAP_SIZE/2,
+  vx: 0, vy: 0,
+  angle: 0, 
+  w: 24, h: 40,
+  speed: 0,
+  drifting: false,
+  nitroActive: false,
+  trail: [],
+  particles: []
+};
+
+// ============================================================
+// POLICE
+// ============================================================
+const police = [];
+const MAX_POLICE = 5;
+
+function spawnPolice(){
+  if(police.length >= MAX_POLICE) return;
+  let angle = Math.random()*Math.PI*2;
+  let dist = 400 + Math.random()*200;
+  police.push({
+    x: player.x + Math.cos(angle)*dist,
+    y: player.y + Math.sin(angle)*dist,
+    vx: 0, vy: 0,
+    angle: 0,
+    speed: 0,
+    w: 22, h: 36
+  });
+}
+
+function updatePolice(){
+  for(let p of police){
+    let dx = player.x - p.x;
+    let dy = player.y - p.y;
+    let dist = Math.sqrt(dx*dx+dy*dy);
+    let targetAngle = Math.atan2(dy,dx) - Math.PI/2;
+
+    let angleDiff = targetAngle - p.angle;
+    while(angleDiff > Math.PI) angleDiff -= Math.PI*2;
+    while(angleDiff < -Math.PI) angleDiff += Math.PI*2;
+    p.angle += angleDiff * 0.04;
+
+    let policeSpeed = 3 + G.wantedLevel*0.5;
+    if(dist > 50){
+      p.vx += Math.sin(p.angle)*policeSpeed*0.1;
+      p.vy -= Math.cos(p.angle)*policeSpeed*0.1;
+    }
+    p.vx *= 0.9; p.vy *= 0.9;
+    p.x += p.vx; p.y += p.vy;
+
+    // Catch player
+    if(dist < 40 && G.wantedLevel > 0){
+      G.health -= 0.5;
+      if(G.health < 0) G.health = 0;
+    }
+  }
+}
+
+// ============================================================
+// TARGET SYSTEM
+// ============================================================
+let target = null;
+let targetTimer = 0;
+
+function setRandomTarget(){
+  target = {
+    x: 200 + Math.random()*(MAP_SIZE-400),
+    y: 200 + Math.random()*(MAP_SIZE-400),
+    pulse: 0
+  };
+}
+
+// ============================================================
+// PARTICLES
+// ============================================================
+const particles = [];
+
+function addParticle(x, y, color, count=5){
+  for(let i=0;i<count;i++){
+    particles.push({
+      x, y,
+      vx:(Math.random()-0.5)*4,
+      vy:(Math.random()-0.5)*4,
+      life:1, decay:0.02+Math.random()*0.03,
+      color, size:3+Math.random()*6
+    });
+  }
+}
+
+function updateParticles(){
+  for(let i=particles.length-1;i>=0;i--){
+    let p=particles[i];
+    p.x+=p.vx; p.y+=p.vy;
+    p.vy+=0.1;
+    p.life-=p.decay;
+    p.vx*=0.96; p.vy*=0.96;
+    if(p.life<=0) particles.splice(i,1);
+  }
+}
+
+// ============================================================
+// RAIN SYSTEM
+// ============================================================
+const rainDrops = [];
+for(let i=0;i<150;i++){
+  rainDrops.push({
+    x:Math.random()*3000, y:Math.random()*3000,
+    speed:8+Math.random()*6, len:15+Math.random()*20
+  });
+}
+
+// ============================================================
+// CAMERA
+// ============================================================
+const cam = { x:0, y:0, zoom:1 };
+
+function updateCamera(){
+  cam.x = player.x - canvas.width/2;
+  cam.y = player.y - canvas.height/2;
+}
+
+// ============================================================
+// DRAW FUNCTIONS
+// ============================================================
+function worldToScreen(wx, wy){
+  return {x: wx - cam.x, y: wy - cam.y};
+}
+
+function drawCity(){
+  // Sky/Ground
+  ctx.fillStyle = '#0a0a12';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // Ground
+  ctx.fillStyle = '#111118';
+  let gx = -cam.x % 100, gy = -cam.y % 100;
+
+  // Roads
+  for(let r of ROADS){
+    let p = worldToScreen(r.x, r.y);
+    if(p.x > canvas.width+200 || p.x+r.w < -200 || p.y > canvas.height+200 || p.y+r.h < -200) continue;
+
+    // Road surface
+    ctx.fillStyle = '#1a1a22';
+    ctx.fillRect(p.x, p.y, r.w, r.h);
+
+    // Road markings
+    ctx.strokeStyle = '#ffdd0033';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([20,20]);
+    if(r.w > r.h){
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y+r.h/2);
+      ctx.lineTo(p.x+r.w, p.y+r.h/2);
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(p.x+r.w/2, p.y);
+      ctx.lineTo(p.x+r.w/2, p.y+r.h);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    // Road edge glow
+    ctx.strokeStyle = '#00ff8822';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(p.x, p.y, r.w, r.h);
+  }
+
+  // Trees
+  for(let t of TREES){
+    let p = worldToScreen(t.x, t.y);
+    if(p.x < -50 || p.x > canvas.width+50 || p.y < -50 || p.y > canvas.height+50) continue;
+    ctx.fillStyle = '#0a2a0a';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, t.r+4, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = t.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, t.r, 0, Math.PI*2);
+    ctx.fill();
+    // Glow
+    ctx.strokeStyle = '#00ff0022';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, t.r+2, 0, Math.PI*2);
+    ctx.stroke();
+  }
+
+  // Buildings
+  for(let b of BUILDINGS){
+    let p = worldToScreen(b.x, b.y);
+    if(p.x > canvas.width+200 || p.x+b.w < -200 || p.y > canvas.height+200 || p.y+b.h < -200) continue;
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillRect(p.x+6, p.y+6, b.w, b.h);
+
+    // Building body
+    ctx.fillStyle = b.color;
+    ctx.fillRect(p.x, p.y, b.w, b.h);
+
+    // Windows
+    if(b.windows){
+      ctx.fillStyle = b.winColor;
+      for(let wy=4;wy<b.h-4;wy+=10){
+        for(let wx=4;wx<b.w-4;wx+=10){
+          if(Math.random()>0.3){
+            ctx.globalAlpha = 0.6+Math.random()*0.4;
+            ctx.fillRect(p.x+wx, p.y+wy, 6, 7);
+          }
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // Neon sign
+    if(b.neon){
+      let neonColors = ['#ff0088','#00ffff','#ffaa00','#ff4444','#00ff88'];
+      ctx.strokeStyle = neonColors[Math.floor(Math.random()*neonColors.length)];
+      ctx.lineWidth = 3;
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = ctx.strokeStyle;
+      ctx.strokeRect(p.x+2, p.y+2, b.w-4, 8);
+      ctx.shadowBlur = 0;
+    }
+
+    // Border
+    ctx.strokeStyle = '#333344';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(p.x, p.y, b.w, b.h);
+  }
+}
+
+function drawRain(){
+  ctx.strokeStyle = 'rgba(150,200,255,0.25)';
+  ctx.lineWidth = 1;
+  for(let r of rainDrops){
+    let p = worldToScreen(r.x, r.y);
+    if(p.x < -10 || p.x > canvas.width+10) continue;
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(p.x+3, p.y+r.len);
+    ctx.stroke();
+    r.y += r.speed;
+    r.x += 2;
+    if(r.y > player.y+canvas.height/2+100 || r.x > player.x+canvas.width/2+100){
+      r.x = player.x - canvas.width/2 + Math.random()*canvas.width;
+      r.y = player.y - canvas.height/2 - 50;
+    }
+  }
+}
+
+function drawTarget(){
+  if(!target) return;
+  let p = worldToScreen(target.x, target.y);
+  target.pulse = (target.pulse||0) + 0.05;
+  let pulse = Math.sin(target.pulse)*15;
+
+  // Target circle
+  ctx.strokeStyle = '#ffaa00';
+  ctx.lineWidth = 3;
+  ctx.shadowBlur = 20;
+  ctx.shadowColor = '#ffaa00';
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, 30+pulse, 0, Math.PI*2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, 15, 0, Math.PI*2);
+  ctx.fillStyle = '#ffaa0066';
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Arrow on screen edge if off-screen
+  if(p.x < 20 || p.x > canvas.width-20 || p.y < 20 || p.y > canvas.height-20){
+    let dx = target.x - player.x;
+    let dy = target.y - player.y;
+    let ang = Math.atan2(dy, dx);
+    let ax = canvas.width/2 + Math.cos(ang)*Math.min(canvas.width/2-40, canvas.height/2-40);
+    let ay = canvas.height/2 + Math.sin(ang)*Math.min(canvas.width/2-40, canvas.height/2-40);
+
+    ctx.save();
+    ctx.translate(ax, ay);
+    ctx.rotate(ang);
+    ctx.fillStyle = '#ffaa00';
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#ffaa00';
+    ctx.beginPath();
+    ctx.moveTo(20, 0);
+    ctx.lineTo(-10, -12);
+    ctx.lineTo(-10, 12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    ctx.shadowBlur = 0;
+  }
+}
+
+function drawPlayer(){
+  let car = CARS[G.currentCar];
+  let p = worldToScreen(player.x, player.y);
+
+  // Trail
+  for(let i=0;i<player.trail.length;i++){
+    let t = player.trail[i];
+    let tp = worldToScreen(t.x, t.y);
+    ctx.globalAlpha = (i/player.trail.length)*0.3;
+    ctx.fillStyle = G.nitroActive ? '#ff00ff' : '#88aaff';
+    ctx.beginPath();
+    ctx.arc(tp.x, tp.y, 4, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(player.angle);
+
+  // Car glow
+  ctx.shadowBlur = G.nitroActive ? 30 : 15;
+  ctx.shadowColor = car.color;
+
+  // Car body
+  ctx.fillStyle = car.color;
+  ctx.beginPath();
+  ctx.roundRect(-player.w/2, -player.h/2, player.w, player.h, 5);
+  ctx.fill();
+
+  // Windshield
+  ctx.fillStyle = 'rgba(150,220,255,0.7)';
+  ctx.fillRect(-player.w/2+3, -player.h/2+4, player.w-6, player.h/3);
+
+  // Headlights
+  ctx.fillStyle = '#ffffcc';
+  ctx.shadowBlur = 20;
+  ctx.shadowColor = '#ffff88';
+  ctx.fillRect(-player.w/2+2, -player.h/2, 6, 5);
+  ctx.fillRect(player.w/2-8, -player.h/2, 6, 5);
+
+  // Taillights
+  ctx.fillStyle = '#ff3333';
+  ctx.shadowColor = '#ff0000';
+  ctx.fillRect(-player.w/2+2, player.h/2-5, 6, 5);
+  ctx.fillRect(player.w/2-8, player.h/2-5, 6, 5);
+
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
+  // Nitro flame
+  if(G.nitroActive && player.speed > 3){
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(player.angle);
+    let grad = ctx.createLinearGradient(0, player.h/2, 0, player.h/2+30);
+    grad.addColorStop(0,'#ff00ff');
+    grad.addColorStop(0.5,'#ffaa00');
+    grad.addColorStop(1,'transparent');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.ellipse(0, player.h/2+15, 8, 20, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function drawPolice(){
+  for(let p of police){
+    let sp = worldToScreen(p.x, p.y);
+    if(sp.x < -100 || sp.x > canvas.width+100 || sp.y < -100 || sp.y > canvas.height+100) continue;
+
+    ctx.save();
+    ctx.translate(sp.x, sp.y);
+    ctx.rotate(p.angle);
+
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#2244ff';
+    ctx.fillStyle = '#1144cc';
+    ctx.beginPath();
+    ctx.roundRect(-p.w/2, -p.h/2, p.w, p.h, 4);
+    ctx.fill();
+
+    // Police lights flash
+    let flash = Math.floor(Date.now()/200)%2;
+    ctx.fillStyle = flash ? '#ff2222' : '#2222ff';
+    ctx.shadowColor = flash ? '#ff0000' : '#0000ff';
+    ctx.shadowBlur = 20;
+    ctx.fillRect(-8, -p.h/2, 16, 6);
+
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+}
+
+function drawParticles(){
+  for(let p of particles){
+    let sp = worldToScreen(p.x, p.y);
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = p.color;
+    ctx.beginPath();
+    ctx.arc(sp.x, sp.y, p.size, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+}
+
+function drawMinimap(){
+  const mc = document.getElementById('minimapCanvas');
+  const mctx = mc.getContext('2d');
+  const scale = 120/MAP_SIZE;
+
+  mctx.fillStyle = '#0a0a1a';
+  mctx.fillRect(0,0,120,120);
+
+  // Roads
+  mctx.fillStyle = '#1a1a2a';
+  for(let r of ROADS){
+    mctx.fillRect(r.x*scale, r.y*scale, r.w*scale, r.h*scale);
+  }
+
+  // Target
+  if(target){
+    mctx.fillStyle = '#ffaa00';
+    mctx.beginPath();
+    mctx.arc(target.x*scale, target.y*scale, 3, 0, Math.PI*2);
+    mctx.fill();
+  }
+
+  // Police
+  for(let p of police){
+    mctx.fillStyle = '#ff4444';
+    mctx.beginPath();
+    mctx.arc(p.x*scale, p.y*scale, 2, 0, Math.PI*2);
+    mctx.fill();
+  }
+
+  // Player
+  mctx.fillStyle = '#00ff88';
+  mctx.shadowBlur = 6;
+  mctx.shadowColor = '#00ff88';
+  mctx.beginPath();
+  mctx.arc(player.x*scale, player.y*scale, 4, 0, Math.PI*2);
+  mctx.fill();
+  mctx.shadowBlur = 0;
+
+  // Border
+  mctx.strokeStyle = '#00ff8866';
+  mctx.lineWidth = 1;
+  mctx.strokeRect(0,0,120,120);
+}
+
+// ============================================================
+// PLAYER PHYSICS
+// ============================================================
+function updatePlayer(){
+  let car = CARS[G.currentCar];
+  let gas = G.keys['ArrowUp']||G.keys['w']||G.keys['W']||G.touch.gas;
+  let brake = G.keys['ArrowDown']||G.keys['s']||G.keys['S']||G.touch.brake;
+  let left = G.keys['ArrowLeft']||G.keys['a']||G.keys['A']||G.touch.left;
+  let right = G.keys['ArrowRight']||G.keys['d']||G.keys['D']||G.touch.right;
+  let nitro = G.keys['n']||G.keys['N']||G.touch.nitro;
+  let hand = G.keys[' ']||G.touch.hand;
+
+  let maxSpd = car.speed;
+  let turn = car.handling;
+
+  // Nitro
+  G.nitroActive = nitro && G.nitro > 0;
+  if(G.nitroActive){
+    maxSpd *= car.nitroMult;
+    G.nitro = Math.max(0, G.nitro - 0.8);
+    addParticle(player.x, player.y, '#ff00ff', 1);
+  } else {
+    G.nitro = Math.min(100, G.nitro + 0.15);
+  }
+
+  // Fuel
+  if(gas || brake){
+    G.fuel = Math.max(0, G.fuel - 0.02);
+  } else {
+    G.fuel = Math.min(100, G.fuel + 0.005);
+  }
+
+  // Acceleration
+  if(gas && G.fuel > 0){
+    player.speed = Math.min(maxSpd, player.speed + 0.25);
+  } else if(brake){
+    player.speed = Math.max(-maxSpd*0.5, player.speed - 0.3);
+  } else {
+    player.speed *= 0.96;
+    if(Math.abs(player.speed) < 0.1) player.speed = 0;
+  }
+
+  // Handbrake/Drift
+  G.drifting = hand && Math.abs(player.speed) > 2;
+  let grip = G.drifting ? 0.3 : 1.0;
+
+  // Steering
+  if(Math.abs(player.speed) > 0.5){
+    let steerAmount = turn * (player.speed/maxSpd) * grip;
+    if(left) player.angle -= steerAmount;
+    if(right) player.angle += steerAmount;
+  }
+
+  // Movement
+  let tx = player.x + Math.sin(player.angle)*player.speed;
+  let ty = player.y - Math.cos(player.angle)*player.speed;
+
+  // Boundary
+  tx = Math.max(30, Math.min(MAP_SIZE-30, tx));
+  ty = Math.max(30, Math.min(MAP_SIZE-30, ty));
+
+  // Building collision
+  let hit = false;
+  for(let b of BUILDINGS){
+    if(tx > b.x && tx < b.x+b.w && ty > b.y && ty < b.y+b.h){
+      hit = true;
+      G.health = Math.max(0, G.health - Math.abs(player.speed)*0.5);
+      if(Math.abs(player.speed) > 3) addParticle(player.x, player.y, '#ff8800', 8);
+      player.speed *= -0.3;
+      break;
+    }
+  }
+
+  if(!hit){
+    player.x = tx;
+    player.y = ty;
+  }
+
+  // Trail
+  if(Math.abs(player.speed) > 1){
+    player.trail.push({x:player.x, y:player.y});
+    if(player.trail.length > 20) player.trail.shift();
+  }
+
+  // Drift particles
+  if(G.drifting && Math.abs(player.speed) > 3){
+    addParticle(player.x, player.y, '#888888', 2);
+  }
+
+  // Wanted increase on speed
+  if(player.speed > car.speed*0.9 && G.wantedLevel < 2 && Math.random() < 0.001){
+    increaseWanted();
+  }
+
+  G.totalDistance += Math.abs(player.speed);
+  updateCamera();
+}
+
+// ============================================================
+// WANTED SYSTEM
+// ============================================================
+let wantedTimer = 0;
+let wantedDecayTimer = 0;
+let policeSpawnTimer = 0;
+
+function increaseWanted(amount=1){
+  G.wantedLevel = Math.min(5, G.wantedLevel + amount);
+  wantedDecayTimer = 0;
+  updateWantedUI();
+
+  // Spawn police
+  let spawnCount = G.wantedLevel;
+  for(let i=0;i<spawnCount && police.length<MAX_POLICE;i++) spawnPolice();
+}
+
+function updateWantedUI(){
+  for(let i=1;i<=5;i++){
+    let star = document.getElementById('s'+i);
+    if(star) star.className = 'star' + (i<=G.wantedLevel?' active':'');
+  }
+}
+
+// ============================================================
+// MISSION SYSTEM
+// ============================================================
+function startMission(m){
+  if(G.activeMission) return;
+  G.activeMission = m;
+  G.missionTimer = m.time;
+  setRandomTarget();
+
+  document.getElementById('missionBox').style.display = 'block';
+  document.getElementById('missionTitle').textContent = '🎯 '+m.name;
+  document.getElementById('missionDesc').textContent = m.desc;
+
+  showNotification('🎯 Mission شروع!
+'+m.name);
+  hideMissionScreen();
+}
+
+function checkMission(){
+  if(!G.activeMission || !target) return;
+
+  G.missionTimer -= 1/60;
+  let mins = Math.floor(G.missionTimer/60);
+  let secs = Math.floor(G.missionTimer%60);
+  document.getElementById('missionTimer').textContent = `⏱ ${mins}:${secs.toString().padStart(2,'0')}`;
+
+  // Check reach target
+  let dx = player.x - target.x;
+  let dy = player.y - target.y;
+  if(Math.sqrt(dx*dx+dy*dy) < 50){
+    completeMission();
+    return;
+  }
+
+  // Timer fail
+  if(G.missionTimer <= 0){
+    failMission();
+  }
+}
+
+function completeMission(){
+  let reward = G.activeMission.reward;
+  G.money += reward;
+  G.completedMissions.push(G.activeMission.id);
+
+  document.getElementById('missionBox').style.display = 'none';
+  showNotification(`✅ Mission Complete!
++$${reward.toLocaleString()}`);
+  addParticle(player.x, player.y, '#00ff88', 30);
+
+  G.activeMission = null;
+  target = null;
+  updateMoneyUI();
+}
+
+function failMission(){
+  document.getElementById('missionBox').style.display = 'none';
+  showNotification('❌ Mission Failed!
+دوبارہ کوشش کریں');
+  G.activeMission = null;
+  target = null;
+}
+
+// ============================================================
+// UI FUNCTIONS
+// ============================================================
+function updateHUD(){
+  document.getElementById('moneyText').textContent = G.money.toLocaleString();
+  document.getElementById('speedText').textContent = Math.abs(Math.floor(player.speed*18));
+  document.getElementById('healthFill').style.width = G.health+'%';
+  document.getElementById('nitroFill').style.width = G.nitro+'%';
+  document.getElementById('fuelFill').style.width = G.fuel+'%';
+  updateWantedUI();
+}
+
+function updateMoneyUI(){
+  document.getElementById('moneyText').textContent = G.money.toLocaleString();
+  document.getElementById('menuMoney').textContent = G.money.toLocaleString();
+  document.getElementById('garageMoney').textContent = G.money.toLocaleString();
+}
+
+let notifTimeout;
+function showNotification(msg){
+  let n = document.getElementById('notification');
+  n.innerHTML = msg.replace(/\n/g,'<br>');
+  n.style.display = 'block';
+  clearTimeout(notifTimeout);
+  notifTimeout = setTimeout(()=>{ n.style.display='none'; }, 2500);
+}
+
+// ============================================================
+// SCREENS
+// ============================================================
+function showMenu(){
+  G.state = 'menu';
+  document.getElementById('menuScreen').style.display = 'flex';
+  document.getElementById('hud').style.display = 'none';
+  document.getElementById('controls').style.display = 'none';
+  document.getElementById('menuMoney').textContent = G.money.toLocaleString();
+}
+
+function startGame(){
+  G.state = 'playing';
+  document.getElementById('menuScreen').style.display = 'none';
+  document.getElementById('hud').style.display = 'block';
+  document.getElementById('controls').style.display = 'flex';
+  if(!target) setRandomTarget();
+}
+
+function showMissionScreen(){
+  G.state = 'missions';
+  document.getElementById('menuScreen').style.display = 'none';
+  document.getElementById('missionScreen').style.display = 'flex';
+  renderMissions();
+}
+
+function hideMissionScreen(){
+  document.getElementById('missionScreen').style.display = 'none';
+}
+
+function showGarageScreen(){
+  document.getElementById('menuScreen').style.display = 'none';
+  document.getElementById('garageScreen').style.display = 'flex';
+  document.getElementById('garageMoney').textContent = G.money.toLocaleString();
+  renderGarage();
+}
+
+function hideGarageScreen(){
+  document.getElementById('garageScreen').style.display = 'none';
+}
+
+function renderMissions(){
+  let grid = document.getElementById('missionsGrid');
+  grid.innerHTML = '';
+  MISSIONS.forEach(m => {
+    let completed = G.completedMissions.includes(m.id);
+    let locked = m.unlockAt > G.completedMissions.length;
+    let cls = locked ? 'locked' : m.diff;
+    let card = document.createElement('div');
+    card.className = 'mission-card '+cls;
+    card.innerHTML = `
+      <div class="mission-name">${locked?'🔒 ':completed?'✅ ':''} ${m.name}</div>
+      <div class="mission-reward">💰 $${m.reward.toLocaleString()}</div>
+      <div class="mission-diff" style="color:${m.diff==='easy'?'#00ff88':m.diff==='medium'?'#ffaa00':'#ff4444'}">${m.diff.toUpperCase()} • ${Math.floor(m.time/60)}:${(m.time%60).toString().padStart(2,'0')}</div>
+    `;
+    if(!locked && !completed){
+      card.onclick = () => startMission(m);
+    }
+    grid.appendChild(card);
+  });
+}
+
+function renderGarage(){
+  let grid = document.getElementById('carsGrid');
+  grid.innerHTML = '';
+  CARS.forEach((car,i) => {
+    let owned = G.ownedCars.includes(i);
+    let selected = G.currentCar === i;
+    let card = document.createElement('div');
+    card.className = 'car-card'+(owned?' owned':'')+(selected?' selected':'');
+    card.innerHTML = `
+      <div class="car-emoji">${car.emoji}</div>
+      <div class="car-name">${car.name}</div>
+      <div class="car-price">${owned?'✅ Owned':('💰 $'+car.price.toLocaleString())}</div>
+      <div class="car-stats">🚀${car.speed} 🎯${(car.handling*100).toFixed(0)}</div>
+    `;
+    card.onclick = () => {
+      if(owned){
+        G.currentCar = i;
+        renderGarage();
+        showNotification('🚗 '+car.name+' منتخب!');
+      } else if(G.money >= car.price){
+        G.money -= car.price;
+        G.ownedCars.push(i);
+        G.currentCar = i;
+        renderGarage();
+        updateMoneyUI();
+        showNotification('🎉 '+car.name+' خریدی!
+-$'+car.price.toLocaleString());
+      } else {
+        showNotification('❌ پیسے کم ہیں!
+ضروری: $'+car.price.toLocaleString());
+      }
+    };
+    grid.appendChild(card);
+  });
+}
+
+// ============================================================
+// LOADING SCREEN
+// ============================================================
+function runLoading(){
+  let pct = 0;
+  let fill = document.getElementById('loadFill');
+  let pctTxt = document.getElementById('loadPct');
+  let interval = setInterval(()=>{
+    pct += Math.random()*8+2;
+    if(pct >= 100){
+      pct = 100;
+      clearInterval(interval);
+      setTimeout(()=>{
+        document.getElementById('loadingScreen').style.display = 'none';
+        showMenu();
+        startMenuBg();
+      }, 500);
+    }
+    fill.style.width = pct+'%';
+    pctTxt.textContent = Math.floor(pct)+'%';
+  }, 80);
+}
+
+// Menu Background Animation
+function startMenuBg(){
+  let mc = document.getElementById('menuBg');
+  if(!mc) return;
+  mc.width = window.innerWidth;
+  mc.height = window.innerHeight;
+  let mctx = mc.getContext('2d');
+  let stars = [];
+  for(let i=0;i<100;i++) stars.push({x:Math.random()*mc.width, y:Math.random()*mc.height, s:Math.random()*2+0.5, t:Math.random()*Math.PI*2});
+  let cars = [];
+  for(let i=0;i<5;i++) cars.push({x:Math.random()*mc.width, y:100+Math.random()*(mc.height-200), spd:1+Math.random()*3, c:CARS[Math.floor(Math.random()*CARS.length)].color});
+
+  function animMenu(){
+    if(G.state !== 'menu') return;
+    mctx.fillStyle = 'rgba(0,0,10,0.3)';
+    mctx.fillRect(0,0,mc.width,mc.height);
+
+    // Stars
+    for(let s of stars){
+      s.t += 0.02;
+      mctx.globalAlpha = 0.5+Math.sin(s.t)*0.5;
+      mctx.fillStyle = '#fff';
+      mctx.beginPath();
+      mctx.arc(s.x,s.y,s.s,0,Math.PI*2);
+      mctx.fill();
+    }
+    mctx.globalAlpha = 1;
+
+    // Moving cars
+    for(let c of cars){
+      c.x += c.spd;
+      if(c.x > mc.width+50) c.x = -50;
+      mctx.fillStyle = c.c;
+      mctx.shadowBlur = 10;
+      mctx.shadowColor = c.c;
+      mctx.fillRect(c.x-15,c.y-10,30,20);
+      // Headlights
+      let grad = mctx.createLinearGradient(c.x+15,c.y,c.x+80,c.y);
+      grad.addColorStop(0,'rgba(255,255,200,0.4)');
+      grad.addColorStop(1,'transparent');
+      mctx.fillStyle = grad;
+      mctx.fillRect(c.x+15,c.y-5,65,10);
+      mctx.shadowBlur = 0;
+    }
+
+    // Ground line
+    mctx.strokeStyle = 'rgba(0,255,136,0.1)';
+    mctx.lineWidth = 1;
+    for(let y=0;y<mc.height;y+=80){
+      mctx.beginPath();
+      mctx.moveTo(0,y);
+      mctx.lineTo(mc.width,y);
+      mctx.stroke();
+    }
+
+    requestAnimationFrame(animMenu);
+  }
+  animMenu();
+}
+
+// ============================================================
+// CONTROLS SETUP
+// ============================================================
+function setupControls(){
+  // Keyboard
+  document.addEventListener('keydown', e => { G.keys[e.key] = true; });
+  document.addEventListener('keyup', e => { G.keys[e.key] = false; });
+
+  // Touch buttons
+  function addTouch(id, prop){
+    let el = document.getElementById(id);
+    if(!el) return;
+    el.addEventListener('touchstart', e=>{ e.preventDefault(); G.touch[prop]=true; }, {passive:false});
+    el.addEventListener('touchend', e=>{ e.preventDefault(); G.touch[prop]=false; }, {passive:false});
+    el.addEventListener('mousedown', e=>{ G.touch[prop]=true; });
+    document.addEventListener('mouseup', e=>{ G.touch[prop]=false; });
+  }
+
+  addTouch('btnGas','gas');
+  addTouch('btnBrake','brake');
+  addTouch('btnLeft','left');
+  addTouch('btnRight','right');
+  addTouch('btnNitro','nitro');
+  addTouch('btnHand','hand');
+
+  // Menu buttons
+  document.getElementById('btnPlay').onclick = () => startGame();
+  document.getElementById('btnMissions').onclick = () => showMissionScreen();
+  document.getElementById('btnGarage').onclick = () => showGarageScreen();
+  document.getElementById('btnSettings').onclick = () => showNotification('⚙️ Settings جلد آئے گی!');
+  document.getElementById('closeMissions').onclick = () => { hideMissionScreen(); showMenu(); };
+  document.getElementById('closeGarage').onclick = () => { hideGarageScreen(); showMenu(); };
+  document.getElementById('pauseBtn').onclick = () => { G.paused=!G.paused; showMenu(); };
+
+  // Quit
+  document.getElementById('quitYes').onclick = () => window.location.reload();
+  document.getElementById('quitNo').onclick = () => { document.getElementById('quitDialog').style.display='none'; };
+
+  // Back button / Escape
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape') document.getElementById('quitDialog').style.display='block';
+  });
+}
+
+// ============================================================
+// MAIN GAME LOOP
+// ============================================================
+let lastTime = 0;
+function gameLoop(timestamp){
+  let dt = timestamp - lastTime;
+  lastTime = timestamp;
+
+  if(G.state === 'playing' && !G.paused){
+    updatePlayer();
+    updatePolice();
+    updateParticles();
+    checkMission();
+
+    // Police spawn timer
+    policeSpawnTimer++;
+    if(policeSpawnTimer > 180 && G.wantedLevel > 0 && police.length < G.wantedLevel){
+      spawnPolice();
+      policeSpawnTimer = 0;
+    }
+
+    // Wanted decay
+    if(G.wantedLevel > 0){
+      wantedDecayTimer++;
+      if(wantedDecayTimer > 600){
+        G.wantedLevel = Math.max(0, G.wantedLevel-1);
+        if(G.wantedLevel === 0) police.length = 0;
+        wantedDecayTimer = 0;
+        updateWantedUI();
+      }
+    }
+
+    // Health regen
+    G.health = Math.min(100, G.health + 0.01);
+
+    // Draw
+    drawCity();
+    drawRain();
+    drawTarget();
+    drawParticles();
+    drawPolice();
+    drawPlayer();
+    drawMinimap();
+    updateHUD();
+
+    // Fuel empty warning
+    if(G.fuel < 5 && Math.floor(timestamp/500)%2===0){
+      showNotification('⛽ فیول ختم!
+Gas Station جاؤ!');
+    }
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+setupControls();
+runLoading();
+requestAnimationFrame(gameLoop);
+
+console.log('🎮 NEON RUSH 2.0 — Neo City Loaded!');
+console.log('🚗 WASD یا Arrow Keys سے چلائیں');
+console.log('⚡ N = Nitro | Space = Drift');
+</script>
+</body>
+</html>
