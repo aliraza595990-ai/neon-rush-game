@@ -3,1006 +3,250 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NEON RUSH - Open World Driving Game</title>
+<title>NEON RUSH - Open World Driving</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: #0a0a0f; color: #fff; font-family: 'Arial', sans-serif; overflow: hidden; touch-action: none; }
+body { background: #0a0a0f; overflow: hidden; font-family: Arial, sans-serif; touch-action: none; }
 canvas { display: block; }
-
-/* UI Overlay */
 #ui { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
-
-/* HUD Top */
-#hud-top { position: fixed; top: 0; left: 0; right: 0; padding: 10px 15px; display: flex; justify-content: space-between; align-items: flex-start; }
-#money-display { background: rgba(0,255,100,0.15); border: 1px solid #00ff64; border-radius: 8px; padding: 6px 14px; font-size: 18px; font-weight: bold; color: #00ff64; text-shadow: 0 0 10px #00ff64; }
-#speed-display { background: rgba(0,200,255,0.15); border: 1px solid #00c8ff; border-radius: 8px; padding: 6px 14px; font-size: 18px; font-weight: bold; color: #00c8ff; text-shadow: 0 0 10px #00c8ff; }
-
-/* Wanted Stars */
-#wanted { position: fixed; top: 55px; right: 15px; display: flex; gap: 4px; }
-.star { width: 22px; height: 22px; background: #333; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all 0.3s; }
-.star.active { background: #ff4400; box-shadow: 0 0 8px #ff4400; }
-
-/* Mission Panel */
-#mission-panel { position: fixed; top: 85px; left: 15px; background: rgba(0,0,0,0.7); border: 1px solid #ff6600; border-radius: 10px; padding: 10px 15px; max-width: 220px; }
-#mission-title { color: #ff6600; font-size: 12px; font-weight: bold; margin-bottom: 4px; }
-#mission-desc { color: #fff; font-size: 11px; line-height: 1.4; }
-#mission-progress { color: #00ff64; font-size: 11px; margin-top: 5px; }
-
-/* Minimap */
-#minimap { position: fixed; bottom: 150px; right: 15px; width: 110px; height: 110px; border: 2px solid #00c8ff; border-radius: 8px; background: rgba(0,10,20,0.85); overflow: hidden; }
-#minimap canvas { width: 100%; height: 100%; }
-
-/* Controls */
-#controls { position: fixed; bottom: 0; left: 0; right: 0; height: 140px; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 15px 15px; pointer-events: all; }
-
-/* Left Controls - Steering */
-#left-controls { display: flex; gap: 10px; align-items: flex-end; }
-.ctrl-btn { width: 60px; height: 60px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; active: background: rgba(255,255,255,0.3); transition: all 0.1s; }
-.ctrl-btn:active, .ctrl-btn.pressed { background: rgba(255,255,255,0.35); border-color: rgba(255,255,255,0.8); transform: scale(0.93); }
-
-/* Right Controls */
-#right-controls { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
-#right-row1 { display: flex; gap: 8px; }
-#right-row2 { display: flex; gap: 8px; }
-.gas-btn { background: rgba(0,255,100,0.25); border-color: #00ff64; }
-.brake-btn { background: rgba(255,50,50,0.25); border-color: #ff3232; }
-.nitro-btn { background: rgba(0,150,255,0.25); border-color: #0096ff; width: 70px !important; }
-.hand-btn { background: rgba(255,165,0,0.25); border-color: #ffa500; }
-
-/* Screens */
-.screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-
-/* Main Menu */
-#main-menu { background: linear-gradient(180deg, #020510 0%, #0a0220 50%, #020510 100%); }
-#menu-title { font-size: 52px; font-weight: 900; color: #fff; text-shadow: 0 0 30px #ff6600, 0 0 60px #ff3300; letter-spacing: 8px; margin-bottom: 5px; animation: pulse 2s infinite; }
-#menu-subtitle { font-size: 14px; color: #ff6600; letter-spacing: 4px; margin-bottom: 40px; }
-.menu-btn { background: linear-gradient(135deg, #ff6600, #ff3300); border: none; color: #fff; font-size: 18px; font-weight: bold; padding: 14px 50px; border-radius: 8px; cursor: pointer; margin: 8px; letter-spacing: 2px; box-shadow: 0 0 20px rgba(255,100,0,0.5); transition: all 0.2s; min-width: 220px; }
-.menu-btn:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(255,100,0,0.8); }
-.menu-btn.secondary { background: linear-gradient(135deg, #0066ff, #0033cc); box-shadow: 0 0 20px rgba(0,100,255,0.5); }
-#menu-cash { color: #00ff64; font-size: 20px; margin-bottom: 15px; }
-#menu-car-info { color: #00c8ff; font-size: 14px; margin-bottom: 25px; }
-
-/* Mission Select */
-#mission-select { background: rgba(0,0,0,0.95); }
-#mission-list { width: 90%; max-width: 400px; max-height: 70vh; overflow-y: auto; }
-.mission-item { background: rgba(255,102,0,0.1); border: 1px solid #ff6600; border-radius: 10px; padding: 14px; margin: 8px 0; cursor: pointer; transition: all 0.2s; }
-.mission-item:hover { background: rgba(255,102,0,0.25); transform: scale(1.02); }
-.mission-name { font-size: 16px; font-weight: bold; color: #ff6600; }
-.mission-desc { font-size: 12px; color: #aaa; margin-top: 4px; }
-.mission-reward { font-size: 13px; color: #00ff64; margin-top: 5px; }
-.mission-diff { font-size: 11px; margin-top: 3px; }
-.diff-easy { color: #00ff64; }
+#hud { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; align-items: flex-start; }
+.hud-box { background: rgba(0,0,0,0.75); border: 1px solid #00ffe0; border-radius: 8px; padding: 8px 14px; color: #fff; font-size: 13px; min-width: 110px; }
+.hud-box .label { color: #00ffe0; font-size: 10px; letter-spacing: 1px; }
+.hud-box .value { font-size: 18px; font-weight: bold; margin-top: 2px; }
+#wanted-stars { display: flex; gap: 3px; margin-top: 3px; }
+.star { font-size: 16px; color: #333; }
+.star.active { color: #ff4444; }
+#health-bar-wrap { position: absolute; top: 90px; left: 10px; background: rgba(0,0,0,0.7); border: 1px solid #ff4444; border-radius: 6px; padding: 5px 10px; min-width: 130px; }
+#health-bar-wrap .label { color: #ff4444; font-size: 10px; }
+#health-bar { width: 100%; height: 10px; background: #333; border-radius: 5px; margin-top: 4px; }
+#health-fill { height: 100%; background: linear-gradient(90deg,#ff4444,#ff8800); border-radius: 5px; width: 100%; transition: width 0.3s; }
+#nitro-bar-wrap { position: absolute; top: 90px; right: 10px; background: rgba(0,0,0,0.7); border: 1px solid #00aaff; border-radius: 6px; padding: 5px 10px; min-width: 130px; }
+#nitro-bar-wrap .label { color: #00aaff; font-size: 10px; }
+#nitro-bar { width: 100%; height: 10px; background: #333; border-radius: 5px; margin-top: 4px; }
+#nitro-fill { height: 100%; background: linear-gradient(90deg,#0044ff,#00aaff); border-radius: 5px; width: 100%; transition: width 0.2s; }
+#mission-box { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); border: 1px solid #ffaa00; border-radius: 8px; padding: 8px 16px; color: #fff; text-align: center; min-width: 200px; }
+#mission-box .m-label { color: #ffaa00; font-size: 10px; letter-spacing: 1px; }
+#mission-box .m-text { font-size: 13px; margin-top: 2px; }
+#mission-box .m-reward { color: #00ff88; font-size: 11px; margin-top: 2px; }
+#speedometer { position: absolute; bottom: 130px; right: 10px; background: rgba(0,0,0,0.75); border: 1px solid #00ffe0; border-radius: 8px; padding: 8px 14px; color: #fff; text-align: center; }
+#speedometer .spd { font-size: 28px; font-weight: bold; color: #00ffe0; }
+#speedometer .spd-label { font-size: 10px; color: #888; }
+#minimap { position: absolute; bottom: 130px; left: 10px; width: 110px; height: 110px; background: rgba(0,0,0,0.85); border: 1px solid #00ffe0; border-radius: 8px; overflow: hidden; }
+#message { position: absolute; top: 45%; left: 50%; transform: translate(-50%,-50%); background: rgba(0,0,0,0.92); border: 2px solid #ffaa00; border-radius: 12px; padding: 16px 28px; color: #fff; text-align: center; font-size: 18px; display: none; min-width: 220px; max-width: 320px; }
+#message .msg-title { font-size: 22px; font-weight: bold; margin-bottom: 6px; }
+#message .msg-sub { font-size: 13px; color: #aaa; white-space: pre-line; }
+#message button { margin-top: 12px; padding: 8px 24px; background: linear-gradient(135deg,#ffaa00,#ff6600); border: none; border-radius: 8px; color: #fff; font-size: 15px; font-weight: bold; cursor: pointer; pointer-events: all; }
+#controls { position: absolute; bottom: 0; left: 0; right: 0; height: 120px; display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; pointer-events: all; }
+.ctrl-side { display: flex; gap: 8px; align-items: center; }
+.ctrl-btn { width: 58px; height: 58px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 2px solid rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px; cursor: pointer; user-select: none; }
+.ctrl-btn.gas { border-color: #00ff88; color: #00ff88; }
+.ctrl-btn.brake { border-color: #ff4444; color: #ff4444; }
+.ctrl-btn.nitro { border-color: #00aaff; color: #00aaff; width: 64px; height: 64px; font-size: 13px; font-weight: bold; }
+.ctrl-btn.hbrake { border-color: #ffaa00; color: #ffaa00; font-size: 12px; font-weight: bold; }
+#main-menu { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at center,#0d0d2b 0%,#050510 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; color: #fff; }
+.menu-title { font-size: 52px; font-weight: 900; letter-spacing: 6px; background: linear-gradient(135deg,#00ffe0,#0080ff,#ff00aa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px; }
+.menu-sub { color: #888; font-size: 14px; letter-spacing: 3px; margin-bottom: 40px; }
+.menu-btn { width: 240px; padding: 14px; margin: 8px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; letter-spacing: 1px; }
+.btn-play { background: linear-gradient(135deg,#00ffe0,#0080ff); color: #000; }
+.btn-missions { background: linear-gradient(135deg,#ffaa00,#ff6600); color: #000; }
+.btn-garage { background: linear-gradient(135deg,#aa00ff,#ff00aa); color: #fff; }
+.menu-stars { color: #ffaa00; font-size: 28px; margin-bottom: 16px; letter-spacing: 4px; }
+#mission-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.97); z-index: 100; display: none; flex-direction: column; align-items: center; overflow-y: auto; padding: 20px; }
+#garage-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.97); z-index: 100; display: none; flex-direction: column; align-items: center; overflow-y: auto; padding: 20px; }
+.screen-title { font-size: 28px; font-weight: bold; color: #00ffe0; letter-spacing: 3px; margin-bottom: 20px; margin-top: 10px; }
+.back-btn { position: fixed; top: 15px; left: 15px; background: rgba(255,255,255,0.1); border: 1px solid #555; border-radius: 8px; padding: 8px 16px; color: #fff; font-size: 13px; cursor: pointer; z-index: 200; }
+.mission-card { width: 100%; max-width: 380px; background: rgba(255,255,255,0.05); border: 1px solid #333; border-radius: 12px; padding: 14px 18px; margin: 6px 0; display: flex; justify-content: space-between; align-items: center; color: #fff; }
+.mission-card.available { border-color: #ffaa00; }
+.mission-card.completed { border-color: #00ff88; opacity: 0.7; }
+.mission-card.locked { opacity: 0.4; }
+.m-info .m-name { font-size: 15px; font-weight: bold; }
+.m-info .m-desc { font-size: 11px; color: #888; margin-top: 3px; }
+.m-info .m-diff { font-size: 10px; margin-top: 4px; }
+.diff-easy { color: #00ff88; }
 .diff-medium { color: #ffaa00; }
-.diff-hard { color: #ff3300; }
-.mission-locked { opacity: 0.4; cursor: not-allowed; }
-
-/* Garage */
-#garage-screen { background: rgba(0,0,0,0.95); }
-.garage-cars { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-height: 55vh; overflow-y: auto; width: 90%; max-width: 450px; }
-.car-card { background: rgba(0,150,255,0.1); border: 1px solid #0096ff; border-radius: 10px; padding: 12px; width: 130px; cursor: pointer; transition: all 0.2s; text-align: center; }
-.car-card:hover { background: rgba(0,150,255,0.25); transform: scale(1.03); }
-.car-card.owned { border-color: #00ff64; background: rgba(0,255,100,0.1); }
-.car-card.selected { border-color: #ffaa00; box-shadow: 0 0 15px rgba(255,170,0,0.5); }
-.car-emoji { font-size: 36px; margin-bottom: 6px; }
-.car-name { font-size: 12px; font-weight: bold; color: #00c8ff; }
-.car-stats { font-size: 10px; color: #888; margin-top: 3px; }
-.car-price { font-size: 13px; color: #00ff64; font-weight: bold; margin-top: 5px; }
-
-/* Notifications */
-#notification { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); border: 2px solid #ff6600; border-radius: 12px; padding: 20px 35px; font-size: 18px; font-weight: bold; z-index: 200; display: none; text-align: center; }
-
-/* Mission Complete */
-#mission-complete { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(135deg, #001500, #002800); border: 2px solid #00ff64; border-radius: 15px; padding: 25px 40px; z-index: 200; display: none; text-align: center; }
-#mc-title { font-size: 26px; font-weight: bold; color: #00ff64; text-shadow: 0 0 15px #00ff64; }
-#mc-reward { font-size: 20px; color: #ffaa00; margin: 10px 0; }
-#mc-btn { background: #00ff64; color: #000; border: none; padding: 12px 35px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-
-/* Game Over */
-#game-over { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(135deg, #150000, #280000); border: 2px solid #ff0000; border-radius: 15px; padding: 25px 40px; z-index: 200; display: none; text-align: center; }
-#go-title { font-size: 28px; font-weight: bold; color: #ff0000; text-shadow: 0 0 15px #ff0000; }
-#go-btn { background: #ff3300; color: #fff; border: none; padding: 12px 35px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 15px; }
-
-/* Screen Titles */
-.screen-title { font-size: 28px; font-weight: bold; color: #ff6600; margin-bottom: 20px; letter-spacing: 3px; text-shadow: 0 0 15px #ff6600; }
-.back-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 10px 25px; border-radius: 8px; cursor: pointer; font-size: 14px; margin-top: 15px; }
-
-/* Nitro Bar */
-#nitro-bar-container { position: fixed; bottom: 145px; left: 15px; width: 120px; }
-#nitro-label { font-size: 10px; color: #0096ff; margin-bottom: 3px; }
-#nitro-bar-bg { height: 8px; background: rgba(0,100,255,0.2); border: 1px solid #0096ff; border-radius: 4px; }
-#nitro-bar { height: 100%; background: linear-gradient(90deg, #0066ff, #00c8ff); border-radius: 4px; transition: width 0.1s; }
-
-/* Health Bar */
-#health-bar-container { position: fixed; bottom: 160px; left: 15px; width: 120px; }
-#health-label { font-size: 10px; color: #ff3300; margin-bottom: 3px; }
-#health-bar-bg { height: 8px; background: rgba(255,0,0,0.2); border: 1px solid #ff3300; border-radius: 4px; }
-#health-bar { height: 100%; background: linear-gradient(90deg, #ff0000, #ff6600); border-radius: 4px; transition: width 0.2s; }
-
-/* Timer */
-#timer-display { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(255,165,0,0.15); border: 1px solid #ffa500; border-radius: 8px; padding: 5px 15px; font-size: 18px; font-weight: bold; color: #ffa500; display: none; }
-
-/* Rain */
-#rain-canvas { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 5; opacity: 0.35; }
-
-/* Flash */
-#flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 150; opacity: 0; background: white; transition: opacity 0.1s; }
-
-@keyframes pulse { 0%,100%{text-shadow:0 0 30px #ff6600,0 0 60px #ff3300} 50%{text-shadow:0 0 50px #ff6600,0 0 100px #ff3300,0 0 150px #ff0000} }
-
-/* Neon city buildings in menu */
-.city-bg { position: absolute; bottom: 0; left: 0; right: 0; height: 200px; display: flex; align-items: flex-end; gap: 3px; padding: 0 10px; opacity: 0.4; }
-.building { background: linear-gradient(180deg, #001133, #000011); border: 1px solid #0033ff; min-width: 20px; position: relative; }
-.building::before { content: ''; position: absolute; top: 5px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; background: #ff0000; border-radius: 50%; animation: blink 1.5s infinite; }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-
-/* Scrollbar */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-thumb { background: #ff6600; border-radius: 2px; }
+.diff-hard { color: #ff4444; }
+.m-right { text-align: right; }
+.m-reward-text { color: #ffaa00; font-size: 14px; font-weight: bold; }
+.m-status { font-size: 20px; margin-top: 4px; }
+.start-btn { padding: 6px 14px; border: none; border-radius: 6px; background: linear-gradient(135deg,#ffaa00,#ff6600); color: #000; font-size: 12px; font-weight: bold; cursor: pointer; margin-top: 6px; }
+.car-card { width: 100%; max-width: 380px; background: rgba(255,255,255,0.05); border: 1px solid #333; border-radius: 12px; padding: 14px 18px; margin: 6px 0; display: flex; justify-content: space-between; align-items: center; color: #fff; }
+.car-card.owned { border-color: #00ffe0; }
+.car-card.selected { border-color: #aa00ff; background: rgba(170,0,255,0.1); }
+.car-icon { font-size: 36px; }
+.car-info .c-name { font-size: 15px; font-weight: bold; }
+.car-info .c-stats { font-size: 10px; color: #888; margin-top: 4px; }
+.car-info .c-stat { margin-top: 2px; }
+.stat-bar { display: inline-block; height: 5px; background: #00ffe0; border-radius: 3px; vertical-align: middle; margin-left: 5px; }
+.car-right { text-align: right; }
+.car-price { color: #ffaa00; font-size: 15px; font-weight: bold; }
+.buy-btn { padding: 7px 16px; border: none; border-radius: 6px; background: linear-gradient(135deg,#00ffe0,#0080ff); color: #000; font-size: 12px; font-weight: bold; cursor: pointer; margin-top: 6px; display: block; }
+.buy-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.select-btn { padding: 7px 16px; border: none; border-radius: 6px; background: linear-gradient(135deg,#aa00ff,#ff00aa); color: #fff; font-size: 12px; font-weight: bold; cursor: pointer; margin-top: 6px; display: block; }
+#rain-canvas { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 5; opacity: 0.3; }
 </style>
 </head>
 <body>
-
-<!-- Rain Canvas -->
 <canvas id="rain-canvas"></canvas>
-
-<!-- Flash Effect -->
-<div id="flash"></div>
-
-<!-- Main Game Canvas -->
 <canvas id="gameCanvas"></canvas>
-
-<!-- HUD -->
 <div id="ui">
-  <div id="hud-top">
-    <div id="money-display">💰 $<span id="money-val">500</span></div>
-    <div id="timer-display">⏱️ <span id="timer-val">60</span>s</div>
-    <div id="speed-display">🚗 <span id="speed-val">0</span> km/h</div>
+  <div id="hud">
+    <div class="hud-box"><div class="label">&#128176; CASH</div><div class="value" id="cash-val">$500</div></div>
+    <div class="hud-box" style="text-align:center"><div class="label">&#11088; WANTED</div><div id="wanted-stars"><span class="star" id="s1">&#9733;</span><span class="star" id="s2">&#9733;</span><span class="star" id="s3">&#9733;</span><span class="star" id="s4">&#9733;</span><span class="star" id="s5">&#9733;</span></div></div>
+    <div class="hud-box" style="text-align:right"><div class="label">&#128663; CAR</div><div class="value" id="car-val" style="font-size:13px">Sedan</div></div>
   </div>
-  <div id="wanted">
-    <div class="star" id="s1">⭐</div>
-    <div class="star" id="s2">⭐</div>
-    <div class="star" id="s3">⭐</div>
-    <div class="star" id="s4">⭐</div>
-    <div class="star" id="s5">⭐</div>
-  </div>
-  <div id="mission-panel" style="display:none">
-    <div id="mission-title">MISSION</div>
-    <div id="mission-desc">Go to the target!</div>
-    <div id="mission-progress"></div>
-  </div>
-  <div id="health-bar-container">
-    <div id="health-label">❤️ HEALTH</div>
-    <div id="health-bar-bg"><div id="health-bar" style="width:100%"></div></div>
-  </div>
-  <div id="nitro-bar-container">
-    <div id="nitro-label">⚡ NITRO</div>
-    <div id="nitro-bar-bg"><div id="nitro-bar" style="width:100%"></div></div>
-  </div>
+  <div id="health-bar-wrap"><div class="label">&#10084; HEALTH</div><div id="health-bar"><div id="health-fill"></div></div></div>
+  <div id="nitro-bar-wrap"><div class="label">&#9889; NITRO</div><div id="nitro-bar"><div id="nitro-fill"></div></div></div>
+  <div id="mission-box"><div class="m-label">&#128203; MISSION</div><div class="m-text" id="mission-text">Drive around Neo City!</div><div class="m-reward" id="mission-reward">Open MISSIONS to start!</div></div>
+  <div id="speedometer"><div class="spd" id="speed-val">0</div><div class="spd-label">KM/H</div></div>
   <div id="minimap"><canvas id="minimapCanvas" width="110" height="110"></canvas></div>
-</div>
-
-<!-- Controls -->
-<div id="controls">
-  <div id="left-controls">
-    <button class="ctrl-btn" id="btn-left" ontouchstart="keys.left=true" ontouchend="keys.left=false" onmousedown="keys.left=true" onmouseup="keys.left=false">◀</button>
-    <button class="ctrl-btn" id="btn-right" ontouchstart="keys.right=true" ontouchend="keys.right=false" onmousedown="keys.right=true" onmouseup="keys.right=false">▶</button>
-  </div>
-  <div id="right-controls">
-    <div id="right-row1">
-      <button class="ctrl-btn hand-btn" ontouchstart="keys.handbrake=true" ontouchend="keys.handbrake=false" onmousedown="keys.handbrake=true" onmouseup="keys.handbrake=false">🔒</button>
-      <button class="ctrl-btn nitro-btn" ontouchstart="keys.nitro=true" ontouchend="keys.nitro=false" onmousedown="keys.nitro=true" onmouseup="keys.nitro=false">⚡</button>
+  <div id="message"><div class="msg-title" id="msg-title">Welcome!</div><div class="msg-sub" id="msg-sub">Drive to the orange target!</div><button onclick="closeMessage()">OK &#10003;</button></div>
+  <div id="controls">
+    <div class="ctrl-side">
+      <div class="ctrl-btn" id="btn-left">&#9668;</div>
+      <div class="ctrl-btn" id="btn-right">&#9658;</div>
     </div>
-    <div id="right-row2">
-      <button class="ctrl-btn brake-btn" ontouchstart="keys.brake=true" ontouchend="keys.brake=false" onmousedown="keys.brake=true" onmouseup="keys.brake=false">⬇️</button>
-      <button class="ctrl-btn gas-btn" ontouchstart="keys.gas=true" ontouchend="keys.gas=false" onmousedown="keys.gas=true" onmouseup="keys.gas=false">⬆️</button>
+    <div class="ctrl-side" style="flex-direction:column;gap:6px">
+      <div class="ctrl-btn nitro" id="btn-nitro">&#9889; NITRO</div>
+      <div class="ctrl-btn hbrake" id="btn-hb">DRIFT</div>
+    </div>
+    <div class="ctrl-side" style="flex-direction:column;gap:6px">
+      <div class="ctrl-btn gas" id="btn-gas">&#9650;</div>
+      <div class="ctrl-btn brake" id="btn-brake">&#9660;</div>
     </div>
   </div>
 </div>
-
-<!-- MAIN MENU -->
-<div class="screen" id="main-menu">
-  <div class="city-bg" id="city-bg"></div>
-  <div id="menu-title">NEON RUSH</div>
-  <div id="menu-subtitle">OPEN WORLD DRIVING GAME</div>
-  <div id="menu-cash">💰 Cash: $<span id="menu-money">500</span></div>
-  <div id="menu-car-info">🚗 Car: <span id="menu-car">Street Sedan</span></div>
-  <button class="menu-btn" onclick="startGame()">🎮 PLAY</button>
-  <button class="menu-btn secondary" onclick="showMissions()">📋 MISSIONS</button>
-  <button class="menu-btn secondary" onclick="showGarage()">🏎️ GARAGE</button>
+<div id="main-menu">
+  <div class="menu-stars">&#9733; &#9733; &#9733;</div>
+  <div class="menu-title">NEON RUSH</div>
+  <div class="menu-sub">OPEN WORLD CITY DRIVING</div>
+  <button class="menu-btn btn-play" onclick="startGame()">&#127918; PLAY NOW</button>
+  <button class="menu-btn btn-missions" onclick="showMissions()">&#128203; MISSIONS</button>
+  <button class="menu-btn btn-garage" onclick="showGarage()">&#128663; GARAGE</button>
 </div>
-
-<!-- MISSION SELECT -->
-<div class="screen" id="mission-screen" style="display:none">
-  <div class="screen-title">📋 SELECT MISSION</div>
-  <div id="mission-list" class="mission-list"></div>
-  <button class="back-btn" onclick="showMenu()">◀ BACK</button>
+<div id="mission-screen">
+  <button class="back-btn" onclick="hideMissions()">&#8592; Back</button>
+  <div class="screen-title">&#128203; MISSIONS</div>
+  <div id="mission-list"></div>
 </div>
-
-<!-- GARAGE -->
-<div class="screen" id="garage-screen" style="display:none">
-  <div class="screen-title">🏎️ GARAGE</div>
-  <div class="garage-cars" id="garage-cars"></div>
-  <button class="back-btn" onclick="showMenu()">◀ BACK</button>
+<div id="garage-screen">
+  <button class="back-btn" onclick="hideGarage()">&#8592; Back</button>
+  <div class="screen-title">&#128663; GARAGE</div>
+  <div style="color:#ffaa00;margin-bottom:12px;font-size:16px" id="garage-cash"></div>
+  <div id="car-list"></div>
 </div>
-
-<!-- NOTIFICATIONS -->
-<div id="notification"></div>
-<div id="mission-complete">
-  <div id="mc-title">✅ MISSION COMPLETE!</div>
-  <div id="mc-reward">+$<span id="mc-amount">0</span></div>
-  <button id="mc-btn" onclick="hideMissionComplete()">CONTINUE</button>
-</div>
-<div id="game-over">
-  <div id="go-title">💀 BUSTED!</div>
-  <div style="color:#888;font-size:13px;margin:10px 0">You were caught by police!</div>
-  <button id="go-btn" onclick="respawn()">🔄 RESPAWN (-$200)</button>
-  <button class="back-btn" style="margin-top:8px" onclick="goToMenu()">📋 MENU</button>
-</div>
-
 <script>
-// ============================================================
-// NEON RUSH - Complete Game Engine
-// ============================================================
-
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const minimapCanvas = document.getElementById('minimapCanvas');
-const mctx = minimapCanvas.getContext('2d');
-const rainCanvas = document.getElementById('rain-canvas');
-const rctx = rainCanvas.getContext('2d');
-
-// Resize
-function resize() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  rainCanvas.width = window.innerWidth;
-  rainCanvas.height = window.innerHeight;
-}
-resize();
-window.addEventListener('resize', resize);
-
-// Game State
-const WORLD = 3000;
-let gameState = 'menu';
-let money = 500;
-let selectedCar = 0;
-let ownedCars = [0];
-let wantedLevel = 0;
-let health = 100;
-let nitro = 100;
-let activeMission = null;
-let missionTimer = 0;
-let missionTimerActive = false;
-let score = 0;
-let gameTime = 0;
-
-// Keys
-const keys = { gas:false, brake:false, left:false, right:false, nitro:false, handbrake:false };
-document.addEventListener('keydown', e => {
-  if(e.key==='ArrowUp'||e.key==='w'||e.key==='W') keys.gas=true;
-  if(e.key==='ArrowDown'||e.key==='s'||e.key==='S') keys.brake=true;
-  if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A') keys.left=true;
-  if(e.key==='ArrowRight'||e.key==='d'||e.key==='D') keys.right=true;
-  if(e.key===' ') keys.handbrake=true;
-  if(e.key==='n'||e.key==='N') keys.nitro=true;
-});
-document.addEventListener('keyup', e => {
-  if(e.key==='ArrowUp'||e.key==='w'||e.key==='W') keys.gas=false;
-  if(e.key==='ArrowDown'||e.key==='s'||e.key==='S') keys.brake=false;
-  if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A') keys.left=false;
-  if(e.key==='ArrowRight'||e.key==='d'||e.key==='D') keys.right=false;
-  if(e.key===' ') keys.handbrake=false;
-  if(e.key==='n'||e.key==='N') keys.nitro=false;
-});
-
-// CAR DATA
-const CARS = [
-  { name:'Street Sedan', emoji:'🚗', price:0, speed:180, handling:0.06, armor:100, color:'#4488ff', desc:'Starter car. Reliable.' },
-  { name:'Muscle Cruiser', emoji:'🚙', price:1500, speed:220, handling:0.055, armor:130, color:'#ff4422', desc:'Fast and tough.' },
-  { name:'Sport GT', emoji:'🏎️', price:3000, speed:280, handling:0.08, armor:80, color:'#ffaa00', desc:'Extreme speed.' },
-  { name:'City Taxi', emoji:'🚕', price:800, speed:170, handling:0.065, armor:110, color:'#ffdd00', desc:'Taxi missions bonus.' },
-  { name:'Pickup Truck', emoji:'🚚', price:2000, speed:160, handling:0.045, armor:180, color:'#885533', desc:'Heavily armored.' },
-  { name:'Black Van', emoji:'🚐', price:2500, speed:150, handling:0.04, armor:200, color:'#222233', desc:'Max armor, slow.' },
-  { name:'Police Cruiser', emoji:'🚓', price:5000, speed:240, handling:0.07, armor:150, color:'#2244ff', desc:'Evade police easier.' },
-  { name:'SUV Beast', emoji:'🛻', price:4000, speed:200, handling:0.05, armor:160, color:'#334422', desc:'All-round beast.' },
-  { name:'Ghost Racer', emoji:'🏁', price:8000, speed:320, handling:0.09, armor:60, color:'#aa00ff', desc:'LEGENDARY. Fastest.' },
-  { name:'Neon Phantom', emoji:'⚡', price:12000, speed:350, handling:0.095, armor:70, color:'#00ffaa', desc:'SECRET. Ultimate car.' },
+const CARS=[
+{id:0,name:'Street Sedan',icon:'&#128663;',speed:5,handling:5,armor:3,nitroBoost:1.5,price:0,color:'#4488ff'},
+{id:1,name:'Sports GT',icon:'&#127950;',speed:8,handling:7,armor:2,nitroBoost:2.0,price:3000,color:'#ff4444'},
+{id:2,name:'Muscle Car',icon:'&#128664;',speed:7,handling:4,armor:6,nitroBoost:1.8,price:5000,color:'#ff8800'},
+{id:3,name:'Taxi Cab',icon:'&#128661;',speed:5,handling:5,armor:4,nitroBoost:1.4,price:1500,color:'#ffdd00'},
+{id:4,name:'Police Car',icon:'&#128660;',speed:7,handling:7,armor:5,nitroBoost:1.7,price:8000,color:'#0044ff'},
+{id:5,name:'Monster Truck',icon:'&#128667;',speed:4,handling:3,armor:9,nitroBoost:1.3,price:10000,color:'#886600'},
+{id:6,name:'Van',icon:'&#128656;',speed:4,handling:4,armor:7,nitroBoost:1.3,price:2000,color:'#888888'},
+{id:7,name:'SUV',icon:'&#128667;',speed:6,handling:5,armor:7,nitroBoost:1.5,price:4000,color:'#226622'},
+{id:8,name:'Ghost Racer',icon:'&#128128;',speed:10,handling:9,armor:4,nitroBoost:2.5,price:20000,color:'#aa00ff'},
+{id:9,name:'Neon Phantom',icon:'&#9889;',speed:9,handling:10,armor:3,nitroBoost:3.0,price:15000,color:'#00ffff'},
 ];
-
-// MISSIONS
-const MISSIONS = [
-  { id:0, name:'First Delivery', desc:'Deliver a package to the docks. Drive fast!', reward:300, diff:'easy', type:'delivery', unlockAt:0, timeLimit:60, targetX:2400, targetY:400 },
-  { id:1, name:'Taxi Run', desc:'Pick up 3 passengers around the city.', reward:400, diff:'easy', type:'taxi', unlockAt:0, timeLimit:90, targetX:800, targetY:2600 },
-  { id:2, name:'Escape Artist', desc:'Lose the cops! Get away from police pursuit.', reward:500, diff:'easy', type:'escape', unlockAt:0, timeLimit:45, targetX:200, targetY:200 },
-  { id:3, name:'Street Race', desc:'Win the downtown street race. Beat 3 rivals!', reward:700, diff:'medium', type:'race', unlockAt:300, timeLimit:120, targetX:1500, targetY:1500 },
-  { id:4, name:'Chase & Catch', desc:'Chase the criminal car and stop them!', reward:800, diff:'medium', type:'chase', unlockAt:300, timeLimit:90, targetX:2500, targetY:2500 },
-  { id:5, name:'VIP Escort', desc:'Escort the VIP safely to the airport.', reward:1000, diff:'medium', type:'escort', unlockAt:700, timeLimit:100, targetX:100, targetY:100 },
-  { id:6, name:'Warehouse Raid', desc:'Get to the warehouse and grab the goods!', reward:1500, diff:'hard', type:'heist', unlockAt:1000, timeLimit:120, targetX:2800, targetY:200 },
-  { id:7, name:'Destroy Targets', desc:'Smash all 5 enemy vehicles!', reward:2000, diff:'hard', type:'destroy', unlockAt:1500, timeLimit:150, targetX:1500, targetY:300 },
-  { id:8, name:'Boss Chase', desc:'Chief Rex is escaping! Stop his convoy!', reward:3000, diff:'hard', type:'boss', unlockAt:2000, timeLimit:180, targetX:2900, targetY:2900 },
-  { id:9, name:'Final Escape', desc:'Break through the police blockade and escape Neo City!', reward:5000, diff:'hard', type:'final', unlockAt:3000, timeLimit:200, targetX:2950, targetY:1500 },
+const MISSIONS=[
+{id:0,name:'First Delivery',desc:'Deliver a package across town',diff:'easy',reward:300,target:{x:1200,y:400},story:'A mysterious package needs delivery!\nDrive to the marked location!',unlocks:1},
+{id:1,name:'Taxi Rush',desc:'Pick up passengers fast!',diff:'easy',reward:400,target:{x:300,y:1500},story:'Drive to the taxi stand!\nPick up passengers before time runs out!',unlocks:2},
+{id:2,name:'Police Escape',desc:'Escape to the safe house!',diff:'easy',reward:500,target:{x:800,y:800},story:'You attracted police!\nEscape to the safe house fast!',unlocks:3},
+{id:3,name:'Time Trial',desc:'Reach checkpoint in 60 sec',diff:'easy',reward:600,target:{x:1600,y:300},story:'Race against the clock!\nReach the finish line!',unlocks:4},
+{id:4,name:'Street Race',desc:'Beat racers to the finish',diff:'medium',reward:1000,target:{x:400,y:200},story:'Underground street race tonight!\nWin to earn respect!',unlocks:5},
+{id:5,name:'Criminal Chase',desc:'Chase the getaway car!',diff:'medium',reward:1200,target:{x:1800,y:1800},story:'A criminal is fleeing!\nRam his car to stop him!',unlocks:6},
+{id:6,name:'VIP Escort',desc:'Escort the VIP safely',diff:'medium',reward:1500,target:{x:200,y:1800},story:'Protect the VIP car!\nDo not let them crash it!',unlocks:7},
+{id:7,name:'Survive the Wave',desc:'Survive 3 police waves!',diff:'medium',reward:2000,target:{x:1000,y:1000},story:'Police surrounded you!\nSurvive for 3 minutes!',unlocks:8},
+{id:8,name:'Bank Heist',desc:'Steal the cash and escape!',diff:'hard',reward:3000,target:{x:1400,y:600},story:'The big job!\nRob the cash transport and escape!',unlocks:9},
+{id:9,name:'FINAL: Take Down Rex',desc:'Destroy Rex convoy!',diff:'hard',reward:5000,target:{x:1000,y:200},story:'Chief Rex is fleeing!\nTake down his convoy to expose him!',unlocks:null},
 ];
-
-// PLAYER CAR
-const player = {
-  x: 400, y: 400, angle: 0, vx: 0, vy: 0, speed: 0,
-  driftFactor: 0, isNitroOn: false,
-  get carData() { return CARS[selectedCar]; }
-};
-
-// ENEMIES
-let enemies = [];
-let policeList = [];
-let target = null;
-
-// WORLD OBJECTS
-const buildings = [];
-const roads = [];
-const trees = [];
-
-function generateWorld() {
-  // Main roads grid
-  for(let x=0; x<WORLD; x+=300) {
-    roads.push({ x, y:0, w:60, h:WORLD, horiz:false });
-  }
-  for(let y=0; y<WORLD; y+=300) {
-    roads.push({ x:0, y, w:WORLD, h:60, horiz:true });
-  }
-  // Buildings
-  for(let bx=0; bx<WORLD; bx+=300) {
-    for(let by=0; by<WORLD; by+=300) {
-      const numB = 2+Math.floor(Math.random()*3);
-      for(let i=0;i<numB;i++) {
-        const bw = 60+Math.random()*100;
-        const bh = 60+Math.random()*100;
-        const ox = 70+Math.random()*(230-bw);
-        const oy = 70+Math.random()*(230-bh);
-        const colors = ['#112244','#221133','#113322','#332211','#221122'];
-        const neon = ['#0066ff','#ff0066','#00ff66','#ff6600','#aa00ff'];
-        buildings.push({
-          x:bx+ox, y:by+oy, w:bw, h:bh,
-          color: colors[Math.floor(Math.random()*colors.length)],
-          neon: neon[Math.floor(Math.random()*neon.length)],
-          height: 1+Math.random()*3,
-          windows: Math.random()>0.3
-        });
-      }
-    }
-  }
-  // Trees
-  for(let i=0;i<200;i++) {
-    trees.push({ x:Math.random()*WORLD, y:Math.random()*WORLD });
-  }
-  // Spawn enemies
-  spawnEnemies();
-}
-
-function spawnEnemies() {
-  enemies = [];
-  for(let i=0;i<8;i++) {
-    enemies.push({
-      x: 200+Math.random()*(WORLD-400),
-      y: 200+Math.random()*(WORLD-400),
-      angle: Math.random()*Math.PI*2,
-      vx:0, vy:0, speed:0,
-      type: Math.random()>0.5 ? 'civilian' : 'gang',
-      hp: 100,
-      color: Math.random()>0.5 ? '#ff4422' : '#22aa44',
-      size: 16+Math.random()*6
-    });
-  }
-}
-
-function spawnPolice() {
-  const count = wantedLevel;
-  policeList = [];
-  for(let i=0;i<count;i++) {
-    const angle = Math.random()*Math.PI*2;
-    const dist = 400+Math.random()*300;
-    policeList.push({
-      x: player.x + Math.cos(angle)*dist,
-      y: player.y + Math.sin(angle)*dist,
-      angle: 0, vx:0, vy:0, speed:0, hp:100,
-      isHelicopter: wantedLevel>=4 && i===0,
-      isSWAT: wantedLevel>=5 && i===0
-    });
-  }
-}
-
-// CAMERA
-const cam = { x:0, y:0 };
-
-// RAIN
-let raindrops = [];
-for(let i=0;i<150;i++) {
-  raindrops.push({ x:Math.random()*window.innerWidth, y:Math.random()*window.innerHeight, speed:8+Math.random()*8, len:10+Math.random()*15 });
-}
-
-function drawRain() {
-  rctx.clearRect(0,0,rainCanvas.width,rainCanvas.height);
-  rctx.strokeStyle='rgba(150,200,255,0.5)';
-  rctx.lineWidth=1;
-  raindrops.forEach(r=>{
-    rctx.beginPath();
-    rctx.moveTo(r.x,r.y);
-    rctx.lineTo(r.x-2,r.y+r.len);
-    rctx.stroke();
-    r.y+=r.speed;
-    r.x-=1;
-    if(r.y>rainCanvas.height){r.y=-r.len;r.x=Math.random()*rainCanvas.width;}
-  });
-}
-
-// DRAW WORLD
-function drawWorld() {
-  // Sky / background
-  const grad = ctx.createLinearGradient(0,0,0,canvas.height);
-  grad.addColorStop(0,'#020510');
-  grad.addColorStop(1,'#0a0220');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  ctx.save();
-  ctx.translate(-cam.x+canvas.width/2, -cam.y+canvas.height/2);
-
-  // Ground
-  ctx.fillStyle='#111118';
-  ctx.fillRect(0,0,WORLD,WORLD);
-
-  // Roads
-  roads.forEach(r=>{
-    ctx.fillStyle='#1a1a2a';
-    ctx.fillRect(r.x,r.y,r.w,r.h);
-    // Road markings
-    ctx.strokeStyle='rgba(255,255,100,0.3)';
-    ctx.setLineDash([30,30]);
-    ctx.lineWidth=2;
-    ctx.beginPath();
-    if(r.horiz){ ctx.moveTo(r.x,r.y+r.h/2); ctx.lineTo(r.x+r.w,r.y+r.h/2); }
-    else { ctx.moveTo(r.x+r.w/2,r.y); ctx.lineTo(r.x+r.w/2,r.y+r.h); }
-    ctx.stroke();
-    ctx.setLineDash([]);
-  });
-
-  // Buildings
-  buildings.forEach(b=>{
-    // Shadow
-    ctx.fillStyle='rgba(0,0,0,0.5)';
-    ctx.fillRect(b.x+5,b.y+5,b.w,b.h);
-    // Building body
-    ctx.fillStyle=b.color;
-    ctx.fillRect(b.x,b.y,b.w,b.h);
-    // Neon border
-    ctx.strokeStyle=b.neon;
-    ctx.lineWidth=1.5;
-    ctx.shadowColor=b.neon;
-    ctx.shadowBlur=8;
-    ctx.strokeRect(b.x,b.y,b.w,b.h);
-    ctx.shadowBlur=0;
-    // Windows
-    if(b.windows){
-      for(let wx=b.x+8;wx<b.x+b.w-8;wx+=14){
-        for(let wy=b.y+8;wy<b.y+b.h-8;wy+=14){
-          if(Math.random()>0.3){
-            ctx.fillStyle=Math.random()>0.2?'rgba(255,255,150,0.5)':'rgba(0,100,255,0.3)';
-            ctx.fillRect(wx,wy,8,8);
-          }
-        }
-      }
-    }
-  });
-
-  // Trees
-  trees.forEach(t=>{
-    ctx.fillStyle='#1a4422';
-    ctx.beginPath();
-    ctx.arc(t.x,t.y,8,0,Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle='#00ff6622';
-    ctx.beginPath();
-    ctx.arc(t.x,t.y,10,0,Math.PI*2);
-    ctx.fill();
-  });
-
-  // Mission Target
-  if(target && activeMission){
-    const pulse = 0.6+0.4*Math.sin(gameTime*0.1);
-    ctx.strokeStyle=`rgba(255,100,0,${pulse})`;
-    ctx.lineWidth=3;
-    ctx.shadowColor='#ff6600';
-    ctx.shadowBlur=15;
-    for(let r=20;r<=60;r+=20){
-      ctx.beginPath();
-      ctx.arc(target.x,target.y,r,0,Math.PI*2);
-      ctx.stroke();
-    }
-    ctx.shadowBlur=0;
-    ctx.fillStyle='rgba(255,100,0,0.2)';
-    ctx.beginPath();
-    ctx.arc(target.x,target.y,25,0,Math.PI*2);
-    ctx.fill();
-    // Target icon
-    ctx.fillStyle='#ff6600';
-    ctx.font='bold 20px Arial';
-    ctx.textAlign='center';
-    ctx.fillText('🎯',target.x,target.y+7);
-  }
-
-  // Police
-  policeList.forEach(p=>{
-    ctx.save();
-    ctx.translate(p.x,p.y);
-    ctx.rotate(p.angle);
-    if(p.isHelicopter){
-      ctx.font='28px Arial';
-      ctx.textAlign='center';
-      ctx.fillText('🚁',0,5);
-    } else {
-      ctx.shadowColor='#2244ff';
-      ctx.shadowBlur=12;
-      ctx.fillStyle='#2244ff';
-      ctx.fillRect(-14,-8,28,16);
-      ctx.fillStyle='#ffffff';
-      ctx.fillRect(-10,-5,8,5);
-      ctx.fillRect(2,-5,8,5);
-      // Police lights
-      const t2 = Date.now()/200;
-      ctx.fillStyle=Math.sin(t2)>0?'#ff0000':'#0000ff';
-      ctx.fillRect(-8,-10,6,5);
-      ctx.fillRect(2,-10,6,5);
-      ctx.shadowBlur=0;
-    }
-    ctx.restore();
-  });
-
-  // Enemies
-  enemies.forEach(e=>{
-    if(e.hp<=0) return;
-    ctx.save();
-    ctx.translate(e.x,e.y);
-    ctx.rotate(e.angle);
-    ctx.fillStyle=e.color;
-    ctx.shadowColor=e.color;
-    ctx.shadowBlur=8;
-    ctx.fillRect(-e.size/2,-e.size/3,e.size,e.size*0.6);
-    ctx.shadowBlur=0;
-    ctx.restore();
-  });
-
-  // Player Car
-  ctx.save();
-  ctx.translate(player.x,player.y);
-  ctx.rotate(player.angle);
-
-  const carColor = CARS[selectedCar].color;
-  // Car glow
-  ctx.shadowColor=carColor;
-  ctx.shadowBlur=player.isNitroOn?25:12;
-
-  // Car body
-  ctx.fillStyle=carColor;
-  ctx.beginPath();
-  ctx.roundRect(-20,-10,40,20,4);
-  ctx.fill();
-
-  // Windows
-  ctx.fillStyle='rgba(150,220,255,0.7)';
-  ctx.fillRect(-8,-7,14,7);
-  ctx.fillRect(5,-7,10,7);
-
-  // Wheels
-  ctx.fillStyle='#111';
-  [[-16,-12],[-16,8],[12,-12],[12,8]].forEach(([wx,wy])=>{
-    ctx.fillRect(wx,wy,8,6);
-  });
-
-  // Neon underglow
-  ctx.shadowColor='#ff00ff';
-  ctx.shadowBlur=15;
-  ctx.strokeStyle='rgba(255,0,255,0.4)';
-  ctx.lineWidth=2;
-  ctx.strokeRect(-22,-12,44,24);
-  ctx.shadowBlur=0;
-
-  // Nitro fire
-  if(player.isNitroOn){
-    ctx.shadowColor='#00aaff';
-    ctx.shadowBlur=20;
-    ctx.fillStyle='#00aaff';
-    ctx.beginPath();
-    ctx.moveTo(-22,0);
-    ctx.lineTo(-35,-5);
-    ctx.lineTo(-30,0);
-    ctx.lineTo(-35,5);
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  ctx.restore();
-
-  // Direction arrow to target
-  if(target && activeMission){
-    const dx = target.x-player.x;
-    const dy = target.y-player.y;
-    const dist = Math.sqrt(dx*dx+dy*dy);
-    if(dist>100){
-      const ang = Math.atan2(dy,dx);
-      const arrowX = player.x+Math.cos(ang)*60;
-      const arrowY = player.y+Math.sin(ang)*60;
-      ctx.save();
-      ctx.translate(arrowX,arrowY);
-      ctx.rotate(ang);
-      ctx.fillStyle='rgba(255,100,0,0.8)';
-      ctx.shadowColor='#ff6600';
-      ctx.shadowBlur=10;
-      ctx.beginPath();
-      ctx.moveTo(15,0);
-      ctx.lineTo(-10,-8);
-      ctx.lineTo(-10,8);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-    }
-  }
-
-  ctx.restore();
-}
-
-// MINIMAP
-function drawMinimap() {
-  const scale = 110/WORLD;
-  mctx.fillStyle='rgba(0,5,15,0.9)';
-  mctx.fillRect(0,0,110,110);
-
-  // Roads on minimap
-  mctx.fillStyle='#223';
-  roads.forEach(r=>{
-    mctx.fillRect(r.x*scale,r.y*scale,r.w*scale,r.h*scale);
-  });
-
-  // Player dot
-  mctx.fillStyle='#00ff64';
-  mctx.shadowColor='#00ff64';
-  mctx.shadowBlur=4;
-  mctx.beginPath();
-  mctx.arc(player.x*scale,player.y*scale,4,0,Math.PI*2);
-  mctx.fill();
-  mctx.shadowBlur=0;
-
-  // Target on minimap
-  if(target && activeMission){
-    mctx.fillStyle='#ff6600';
-    mctx.beginPath();
-    mctx.arc(target.x*scale,target.y*scale,4,0,Math.PI*2);
-    mctx.fill();
-  }
-
-  // Police on minimap
-  policeList.forEach(p=>{
-    mctx.fillStyle='#ff0000';
-    mctx.beginPath();
-    mctx.arc(p.x*scale,p.y*scale,3,0,Math.PI*2);
-    mctx.fill();
-  });
-}
-
-// PHYSICS
-function updatePlayer() {
-  const car = CARS[selectedCar];
-  const maxSpeed = car.speed / 3.6;
-  const turnSpeed = car.handling;
-  const friction = keys.handbrake ? 0.88 : 0.97;
-
-  let accel = 0;
-  if(keys.gas) accel = 0.4;
-  if(keys.brake) accel = -0.25;
-
-  // Nitro
-  player.isNitroOn = false;
-  if(keys.nitro && nitro>0) {
-    accel *= 2.2;
-    nitro = Math.max(0, nitro-0.8);
-    player.isNitroOn = true;
-  } else if(!keys.nitro) {
-    nitro = Math.min(100, nitro+0.15);
-  }
-
-  player.speed += accel;
-  player.speed *= friction;
-  player.speed = Math.max(-maxSpeed*0.4, Math.min(maxSpeed, player.speed));
-
-  if(Math.abs(player.speed)>0.1){
-    if(keys.left) player.angle -= turnSpeed*(Math.abs(player.speed)/maxSpeed);
-    if(keys.right) player.angle += turnSpeed*(Math.abs(player.speed)/maxSpeed);
-  }
-
-  const nextX = player.x + Math.cos(player.angle)*player.speed;
-  const nextY = player.y + Math.sin(player.angle)*player.speed;
-
-  // Boundary
-  player.x = Math.max(20,Math.min(WORLD-20,nextX));
-  player.y = Math.max(20,Math.min(WORLD-20,nextY));
-
-  // Camera follow
-  cam.x = player.x;
-  cam.y = player.y;
-
-  // Speed for HUD (km/h)
-  const kmh = Math.abs(player.speed)*3.6*10;
-  document.getElementById('speed-val').textContent = Math.round(kmh);
-
-  // HUD bars
-  document.getElementById('health-bar').style.width = health+'%';
-  document.getElementById('nitro-bar').style.width = nitro+'%';
-}
-
-function updatePolice() {
-  if(wantedLevel===0) { policeList=[]; return; }
-  policeList.forEach(p=>{
-    const dx = player.x-p.x;
-    const dy = player.y-p.y;
-    const dist = Math.sqrt(dx*dx+dy*dy);
-    const targetAngle = Math.atan2(dy,dx);
-    p.angle += (targetAngle-p.angle)*0.08;
-    const policeSpeed = p.isHelicopter ? 3.5 : 2.8+(wantedLevel*0.3);
-    p.x += Math.cos(p.angle)*policeSpeed;
-    p.y += Math.sin(p.angle)*policeSpeed;
-    // Collision with player
-    if(dist<30){
-      health -= p.isHelicopter ? 0.5 : 0.3;
-      if(health<=0) showGameOver();
-    }
-    if(dist<20 && wantedLevel>=3){
-      health -= 1;
-    }
-  });
-}
-
-function updateEnemies() {
-  enemies.forEach(e=>{
-    if(e.hp<=0) return;
-    // Simple wander AI
-    e.angle += (Math.random()-0.5)*0.08;
-    e.speed = 1+Math.random()*0.5;
-    e.x += Math.cos(e.angle)*e.speed;
-    e.y += Math.sin(e.angle)*e.speed;
-    e.x=Math.max(50,Math.min(WORLD-50,e.x));
-    e.y=Math.max(50,Math.min(WORLD-50,e.y));
-
-    // Collision with player
-    const dx=player.x-e.x, dy=player.y-e.y;
-    const dist=Math.sqrt(dx*dx+dy*dy);
-    if(dist<25){
-      health-=0.5;
-      if(e.type==='gang') wantedLevel=Math.min(5,wantedLevel+1);
-      updateWantedHUD();
-    }
-
-    // Destroy mission
-    if(activeMission && activeMission.type==='destroy'){
-      if(dist<30){
-        e.hp-=2;
-      }
-    }
-  });
-}
-
-// WANTED HUD
-function updateWantedHUD() {
-  for(let i=1;i<=5;i++){
-    const s=document.getElementById('s'+i);
-    s.classList.toggle('active', i<=wantedLevel);
-  }
-  // Spawn more police
-  if(wantedLevel>0 && policeList.length<wantedLevel) {
-    spawnPolice();
-  }
-}
-
-// MISSION SYSTEM
-function startMission(id) {
-  const m = MISSIONS[id];
-  if(score < m.unlockAt) { notify('🔒 Score '+m.unlockAt+' to unlock!','#ff3300'); return; }
-  activeMission = m;
-  target = { x:m.targetX, y:m.targetY };
-  document.getElementById('mission-panel').style.display='block';
-  document.getElementById('mission-title').textContent=m.name.toUpperCase();
-  document.getElementById('mission-desc').textContent=m.desc;
-  document.getElementById('mission-progress').textContent='🎯 Get to target!';
-  if(m.timeLimit){
-    missionTimer=m.timeLimit;
-    missionTimerActive=true;
-    document.getElementById('timer-display').style.display='block';
-  }
-  showMenu();
-  startGame();
-  notify('🎮 Mission: '+m.name,'#ff6600');
-}
-
-function checkMission() {
-  if(!activeMission||!target) return;
-  const dx=player.x-target.x, dy=player.y-target.y;
-  const dist=Math.sqrt(dx*dx+dy*dy);
-  const distM = Math.round(dist*0.8);
-  document.getElementById('mission-progress').textContent='📍 '+distM+'m away';
-  if(dist<50){
-    completeMission();
-  }
-  if(missionTimerActive){
-    missionTimer-=0.016;
-    document.getElementById('timer-val').textContent=Math.ceil(missionTimer);
-    if(missionTimer<=0){
-      failMission();
-    }
-  }
-}
-
-function completeMission() {
-  const reward = activeMission.reward;
-  money += reward;
-  score += reward;
-  wantedLevel = Math.max(0,wantedLevel-1);
-  updateWantedHUD();
-  document.getElementById('mc-amount').textContent=reward;
-  document.getElementById('mission-complete').style.display='block';
-  document.getElementById('money-val').textContent=money;
-  document.getElementById('menu-money').textContent=money;
-  activeMission=null; target=null;
-  missionTimerActive=false;
-  document.getElementById('timer-display').style.display='none';
-  document.getElementById('mission-panel').style.display='none';
-}
-
-function failMission() {
-  activeMission=null; target=null;
-  missionTimerActive=false;
-  document.getElementById('timer-display').style.display='none';
-  document.getElementById('mission-panel').style.display='none';
-  notify('⏰ TIME'S UP! Mission Failed!','#ff0000');
-}
-
-function hideMissionComplete() {
-  document.getElementById('mission-complete').style.display='none';
-}
-
-function showGameOver() {
-  gameState='paused';
-  document.getElementById('game-over').style.display='block';
-}
-
-function respawn() {
-  if(money>=200){money-=200;}
-  else money=0;
-  health=50; wantedLevel=Math.max(0,wantedLevel-2);
-  player.x=400; player.y=400; player.speed=0;
-  policeList=[]; updateWantedHUD();
-  document.getElementById('game-over').style.display='none';
-  document.getElementById('money-val').textContent=money;
-  gameState='playing';
-}
-
-function goToMenu() {
-  document.getElementById('game-over').style.display='none';
-  document.getElementById('mission-panel').style.display='none';
-  activeMission=null; target=null;
-  missionTimerActive=false;
-  health=100; wantedLevel=0; policeList=[];
-  updateWantedHUD();
-  showMenu();
-}
-
-// NOTIFICATION
-function notify(msg, color='#ff6600') {
-  const n=document.getElementById('notification');
-  n.textContent=msg; n.style.color=color; n.style.borderColor=color;
-  n.style.display='block';
-  clearTimeout(window._notifyTimer);
-  window._notifyTimer=setTimeout(()=>n.style.display='none',2500);
-}
-
-// SCREENS
-function showMenu() {
-  gameState='menu';
-  document.getElementById('main-menu').style.display='flex';
-  document.getElementById('mission-screen').style.display='none';
-  document.getElementById('garage-screen').style.display='none';
-  document.getElementById('controls').style.display='none';
-  document.getElementById('menu-money').textContent=money;
-  document.getElementById('menu-car').textContent=CARS[selectedCar].name;
-}
-
-function startGame() {
-  gameState='playing';
-  document.getElementById('main-menu').style.display='none';
-  document.getElementById('mission-screen').style.display='none';
-  document.getElementById('garage-screen').style.display='none';
-  document.getElementById('controls').style.display='flex';
-  document.getElementById('money-val').textContent=money;
-}
-
-function showMissions() {
-  document.getElementById('main-menu').style.display='none';
-  document.getElementById('mission-screen').style.display='flex';
-  const list=document.getElementById('mission-list');
-  list.innerHTML='';
-  MISSIONS.forEach(m=>{
-    const locked=score<m.unlockAt;
-    const d=document.createElement('div');
-    d.className='mission-item'+(locked?' mission-locked':'');
-    d.innerHTML=`<div class="mission-name">${m.name}</div>
-      <div class="mission-desc">${m.desc}</div>
-      <div class="mission-reward">💰 Reward: $${m.reward}</div>
-      <div class="mission-diff diff-${m.diff}">Difficulty: ${m.diff.toUpperCase()}${locked?' | 🔒 Need $'+m.unlockAt:''}</div>`;
-    if(!locked) d.onclick=()=>startMission(m.id);
-    list.appendChild(d);
-  });
-}
-
-function showGarage() {
-  document.getElementById('main-menu').style.display='none';
-  document.getElementById('garage-screen').style.display='flex';
-  const container=document.getElementById('garage-cars');
-  container.innerHTML='';
-  CARS.forEach((c,i)=>{
-    const owned=ownedCars.includes(i);
-    const d=document.createElement('div');
-    d.className='car-card'+(owned?' owned':'')+(i===selectedCar?' selected':'');
-    d.innerHTML=`<div class="car-emoji">${c.emoji}</div>
-      <div class="car-name">${c.name}</div>
-      <div class="car-stats">⚡${c.speed}km/h ❤️${c.armor}</div>
-      <div class="car-price">${owned?(i===selectedCar?'✅ SELECTED':'✅ OWNED'):'💰 $'+c.price}</div>`;
-    d.onclick=()=>{
-      if(owned){selectedCar=i;showGarage();}
-      else if(money>=c.price){money-=c.price;ownedCars.push(i);selectedCar=i;showGarage();notify('🚗 '+c.name+' purchased!','#00ff64');}
-      else notify('❌ Not enough cash! Need $'+c.price,'#ff3300');
-    };
-    container.appendChild(d);
-  });
-}
-
-// CITY BACKGROUND in MENU
-function buildCityBG() {
-  const bg=document.getElementById('city-bg');
-  for(let i=0;i<60;i++){
-    const b=document.createElement('div');
-    b.className='building';
-    b.style.height=(40+Math.random()*160)+'px';
-    b.style.width=(15+Math.random()*40)+'px';
-    b.style.borderColor=['#0066ff','#ff0066','#00ff66','#ff6600','#aa00ff'][Math.floor(Math.random()*5)];
-    bg.appendChild(b);
-  }
-}
-
-// MAIN GAME LOOP
-function gameLoop() {
-  gameTime++;
-  if(gameState==='playing'){
-    updatePlayer();
-    updatePolice();
-    updateEnemies();
-    checkMission();
-    drawWorld();
-    drawMinimap();
-    drawRain();
-    document.getElementById('money-val').textContent=money;
-    // Passive wanted level from speed
-    const kmh=Math.abs(player.speed)*36;
-    if(kmh>150 && Math.random()<0.001 && wantedLevel<2){
-      wantedLevel=Math.min(5,wantedLevel+1);
-      updateWantedHUD();
-      notify('⭐ Wanted Level Up!','#ff4400');
-    }
-  } else {
-    drawRain();
-  }
-  requestAnimationFrame(gameLoop);
-}
-
-// INIT
-generateWorld();
-buildCityBG();
-showMenu();
-gameLoop();
+let state={cash:500,health:100,nitro:100,wantedLevel:0,ownedCars:[0],selectedCar:0,completedMissions:[],currentMission:null,playing:false};
+try{const s=JSON.parse(localStorage.getItem('neonrush'));if(s)Object.assign(state,s);}catch(e){}
+function saveState(){try{localStorage.setItem('neonrush',JSON.stringify(state));}catch(e){}}
+const canvas=document.getElementById('gameCanvas');
+const ctx=canvas.getContext('2d');
+function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;const rc=document.getElementById('rain-canvas');rc.width=window.innerWidth;rc.height=window.innerHeight;}
+resize();window.addEventListener('resize',resize);
+const WORLD=2400,ROAD_W=60;
+const BLOCKS=[];
+function genCity(){const sp=220;for(let x=100;x<WORLD-100;x+=sp){for(let y=100;y<WORLD-100;y+=sp){const w=80+Math.random()*60,h=80+Math.random()*60;BLOCKS.push({x,y,w,h,color:`hsl(${200+Math.random()*40},${20+Math.random()*20}%,${12+Math.random()*10}%)`,neon:`hsl(${Math.random()*360},100%,60%)`,floors:Math.floor(2+Math.random()*6)});}}}
+genCity();
+let car={x:1000,y:1000,angle:0,vx:0,vy:0,speed:0,maxSpeed:0,acc:0,handling:0,nitroBoost:1.5};
+function applyCar(id){const c=CARS[id];car.maxSpeed=c.speed*3.5;car.acc=c.speed*0.12;car.handling=c.handling*0.018;car.nitroBoost=c.nitroBoost;}
+applyCar(state.selectedCar);
+const police=[];
+function spawnPolice(n){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,d=400+Math.random()*200;police.push({x:car.x+Math.cos(a)*d,y:car.y+Math.sin(a)*d,angle:0,speed:0,vx:0,vy:0});}}
+let target=null,particles=[],explosions=[];
+const keys={up:false,down:false,left:false,right:false,nitro:false,hand:false};
+document.addEventListener('keydown',e=>{if(e.key==='ArrowUp'||e.key==='w'||e.key==='W')keys.up=true;if(e.key==='ArrowDown'||e.key==='s'||e.key==='S')keys.down=true;if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A')keys.left=true;if(e.key==='ArrowRight'||e.key==='d'||e.key==='D')keys.right=true;if(e.key==='n'||e.key==='N')keys.nitro=true;if(e.key===' ')keys.hand=true;});
+document.addEventListener('keyup',e=>{if(e.key==='ArrowUp'||e.key==='w'||e.key==='W')keys.up=false;if(e.key==='ArrowDown'||e.key==='s'||e.key==='S')keys.down=false;if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A')keys.left=false;if(e.key==='ArrowRight'||e.key==='d'||e.key==='D')keys.right=false;if(e.key==='n'||e.key==='N')keys.nitro=false;if(e.key===' ')keys.hand=false;});
+function setupTouch(id,key){const el=document.getElementById(id);if(!el)return;el.addEventListener('touchstart',e=>{e.preventDefault();keys[key]=true;},{passive:false});el.addEventListener('touchend',e=>{e.preventDefault();keys[key]=false;},{passive:false});el.addEventListener('mousedown',()=>keys[key]=true);el.addEventListener('mouseup',()=>keys[key]=false);}
+setupTouch('btn-gas','up');setupTouch('btn-brake','down');setupTouch('btn-left','left');setupTouch('btn-right','right');setupTouch('btn-nitro','nitro');setupTouch('btn-hb','hand');
+let camX=0,camY=0;
+const rainDrops=[];
+for(let i=0;i<150;i++)rainDrops.push({x:Math.random()*window.innerWidth,y:Math.random()*window.innerHeight,l:10+Math.random()*20,s:8+Math.random()*6});
+const rainCtx=document.getElementById('rain-canvas').getContext('2d');
+function drawRain(){rainCtx.clearRect(0,0,window.innerWidth,window.innerHeight);rainCtx.strokeStyle='rgba(150,200,255,0.5)';rainCtx.lineWidth=1;rainDrops.forEach(d=>{rainCtx.beginPath();rainCtx.moveTo(d.x,d.y);rainCtx.lineTo(d.x-2,d.y+d.l);rainCtx.stroke();d.y+=d.s;d.x-=1;if(d.y>window.innerHeight){d.y=-20;d.x=Math.random()*window.innerWidth;}});}
+let lastTime=0;
+function update(ts){const dt=Math.min((ts-lastTime)/16.67,3);lastTime=ts;
+if(!state.playing){requestAnimationFrame(update);return;}
+const spd=keys.nitro&&state.nitro>0?car.maxSpeed*car.nitroBoost:car.maxSpeed;
+if(keys.up)car.speed=Math.min(car.speed+car.acc*dt,spd);
+else if(keys.down)car.speed=Math.max(car.speed-car.acc*1.5*dt,-spd*0.5);
+else car.speed*=Math.pow(0.9,dt);
+if(Math.abs(car.speed)>0.1){if(keys.left)car.angle-=car.handling*(keys.hand?1.6:1)*dt*Math.sign(car.speed);if(keys.right)car.angle+=car.handling*(keys.hand?1.6:1)*dt*Math.sign(car.speed);}
+car.vx=Math.sin(car.angle)*car.speed;car.vy=-Math.cos(car.angle)*car.speed;
+let nx=car.x+car.vx*dt,ny=car.y+car.vy*dt;
+nx=Math.max(20,Math.min(WORLD-20,nx));ny=Math.max(20,Math.min(WORLD-20,ny));
+BLOCKS.forEach(b=>{if(nx>b.x-15&&nx<b.x+b.w+15&&ny>b.y-15&&ny<b.y+b.h+15){const dmg=Math.abs(car.speed)*0.8;if(dmg>1){state.health=Math.max(0,state.health-dmg);addExplosion(nx,ny,'#ff4400');}car.speed*=-0.3;nx=car.x;ny=car.y;}});
+car.x=nx;car.y=ny;
+if(keys.nitro&&state.nitro>0){state.nitro=Math.max(0,state.nitro-1.5*dt);addParticle(car.x,car.y,'#00aaff');}else if(!keys.nitro){state.nitro=Math.min(100,state.nitro+0.4*dt);}
+if(keys.hand&&Math.abs(car.speed)>1)addParticle(car.x,car.y,'#888888');
+if(state.wantedLevel>0&&police.length<state.wantedLevel)spawnPolice(state.wantedLevel-police.length);
+if(state.wantedLevel===0)police.splice(0,police.length);
+police.forEach(p=>{const dx=car.x-p.x,dy=car.y-p.y,dist=Math.sqrt(dx*dx+dy*dy),tAngle=Math.atan2(dx,-dy);let dA=tAngle-p.angle;while(dA>Math.PI)dA-=Math.PI*2;while(dA<-Math.PI)dA+=Math.PI*2;p.angle+=dA*0.05*dt;const pSpd=4.5+state.wantedLevel*0.5;p.x+=Math.sin(p.angle)*pSpd*dt;p.y-=Math.cos(p.angle)*pSpd*dt;p.x=Math.max(10,Math.min(WORLD-10,p.x));p.y=Math.max(10,Math.min(WORLD-10,p.y));if(dist<30){state.health=Math.max(0,state.health-0.5*dt);if(state.wantedLevel<5&&Math.random()<0.005)state.wantedLevel++;}if(dist>1200){const a2=Math.random()*Math.PI*2;p.x=car.x+Math.cos(a2)*600;p.y=car.y+Math.sin(a2)*600;}});
+if(target&&state.currentMission!==null){const dx=car.x-target.x,dy=car.y-target.y;if(Math.sqrt(dx*dx+dy*dy)<60)completeMission(state.currentMission);}
+if(state.health<=0)respawn();
+particles.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;p.r=Math.max(0,p.r-0.1*dt);});particles=particles.filter(p=>p.life>0);
+explosions.forEach(e=>{e.r+=2*dt;e.life-=dt;});explosions=explosions.filter(e=>e.life>0);
+camX=car.x-canvas.width/2;camY=car.y-canvas.height/2;
+updateHUD();draw();drawRain();
+requestAnimationFrame(update);}
+function addParticle(x,y,color){particles.push({x,y,vx:(Math.random()-0.5)*3,vy:(Math.random()-0.5)*3,life:15,r:4,color});}
+function addExplosion(x,y,color){explosions.push({x,y,r:5,life:10,color});}
+function respawn(){state.health=100;car.speed=0;car.x=1000;car.y=1000;state.wantedLevel=Math.max(0,state.wantedLevel-1);police.splice(0,police.length);showMsg('&#128165; WRECKED!','You respawned at the garage!');saveState();}
+function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.save();ctx.translate(-camX,-camY);
+ctx.fillStyle='#0d0d18';ctx.fillRect(0,0,WORLD,WORLD);
+ctx.strokeStyle='#1a1a2e';ctx.lineWidth=ROAD_W;
+for(let x=0;x<WORLD;x+=220){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WORLD);ctx.stroke();}
+for(let y=0;y<WORLD;y+=220){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD,y);ctx.stroke();}
+ctx.strokeStyle='#ffaa0022';ctx.lineWidth=2;ctx.setLineDash([20,20]);
+for(let x=0;x<WORLD;x+=220){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,WORLD);ctx.stroke();}
+for(let y=0;y<WORLD;y+=220){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(WORLD,y);ctx.stroke();}
+ctx.setLineDash([]);
+BLOCKS.forEach(b=>{ctx.fillStyle='rgba(0,0,0,0.4)';ctx.fillRect(b.x+6,b.y+6,b.w,b.h);ctx.fillStyle=b.color;ctx.fillRect(b.x,b.y,b.w,b.h);ctx.fillStyle='rgba(255,220,100,0.12)';for(let wy=b.y+8;wy<b.y+b.h-5;wy+=14){for(let wx=b.x+6;wx<b.x+b.w-5;wx+=14){if(Math.random()>0.3)ctx.fillRect(wx,wy,8,8);}}ctx.strokeStyle=b.neon;ctx.lineWidth=1.5;ctx.shadowColor=b.neon;ctx.shadowBlur=8;ctx.strokeRect(b.x,b.y,b.w,b.h);ctx.shadowBlur=0;});
+if(target){const pulse=0.7+0.3*Math.sin(Date.now()/200);ctx.strokeStyle='#ffaa00';ctx.lineWidth=3;ctx.shadowColor='#ffaa00';ctx.shadowBlur=20;ctx.beginPath();ctx.arc(target.x,target.y,30*pulse,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.arc(target.x,target.y,10,0,Math.PI*2);ctx.fillStyle='#ffaa0088';ctx.fill();ctx.shadowBlur=0;drawArrow();}
+particles.forEach(p=>{ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=p.color+'aa';ctx.fill();});
+explosions.forEach(e=>{ctx.beginPath();ctx.arc(e.x,e.y,e.r,0,Math.PI*2);ctx.strokeStyle=e.color;ctx.lineWidth=2;ctx.stroke();});
+police.forEach(p=>drawPolice(p));
+drawPlayerCar();
+ctx.restore();drawMinimap();}
+function drawPlayerCar(){ctx.save();ctx.translate(car.x,car.y);ctx.rotate(car.angle);const c=CARS[state.selectedCar];ctx.shadowColor=c.color;ctx.shadowBlur=18;ctx.fillStyle=c.color;ctx.beginPath();if(ctx.roundRect)ctx.roundRect(-12,-18,24,36,4);else{ctx.rect(-12,-18,24,36);}ctx.fill();ctx.fillStyle='rgba(200,240,255,0.4)';ctx.fillRect(-9,-10,18,10);ctx.fillStyle='#ffffaa';ctx.fillRect(-10,-17,7,5);ctx.fillRect(3,-17,7,5);ctx.fillStyle='#ff2200';ctx.fillRect(-10,12,6,4);ctx.fillRect(4,12,6,4);if(keys.nitro&&state.nitro>0){ctx.fillStyle='#00aaff';ctx.beginPath();ctx.ellipse(0,22,6,10+Math.random()*8,0,0,Math.PI*2);ctx.fill();}ctx.shadowBlur=0;ctx.restore();}
+function drawPolice(p){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.angle);ctx.shadowColor='#0044ff';ctx.shadowBlur=15;ctx.fillStyle='#0044cc';ctx.beginPath();if(ctx.roundRect)ctx.roundRect(-10,-16,20,32,3);else ctx.rect(-10,-16,20,32);ctx.fill();const lt=Math.floor(Date.now()/200)%2;ctx.fillStyle=lt?'#ff0000':'#0000ff';ctx.fillRect(-8,-15,6,5);ctx.fillStyle=lt?'#0000ff':'#ff0000';ctx.fillRect(2,-15,6,5);ctx.shadowBlur=0;ctx.restore();}
+function drawArrow(){if(!target)return;const dx=target.x-car.x,dy=target.y-car.y,dist=Math.sqrt(dx*dx+dy*dy);if(dist<80)return;const ang=Math.atan2(dx,-dy),ax=car.x+Math.sin(ang)*70,ay=car.y-Math.cos(ang)*70;ctx.save();ctx.translate(ax,ay);ctx.rotate(ang);ctx.shadowColor='#ffaa00';ctx.shadowBlur=10;ctx.fillStyle='#ffaa00';ctx.beginPath();ctx.moveTo(0,-14);ctx.lineTo(8,6);ctx.lineTo(0,2);ctx.lineTo(-8,6);ctx.closePath();ctx.fill();ctx.rotate(-ang);ctx.fillStyle='#ffaa00';ctx.font='bold 11px Arial';ctx.textAlign='center';ctx.fillText(Math.floor(dist)+'m',0,24);ctx.shadowBlur=0;ctx.restore();}
+function drawMinimap(){const mc=document.getElementById('minimapCanvas'),mx=mc.getContext('2d'),S=110/WORLD;mx.fillStyle='#0a0a15';mx.fillRect(0,0,110,110);mx.fillStyle='#1a1a30';for(let x=0;x<WORLD;x+=220)mx.fillRect(x*S-1,0,3,110);for(let y=0;y<WORLD;y+=220)mx.fillRect(0,y*S-1,110,3);BLOCKS.forEach(b=>{mx.fillStyle='#222';mx.fillRect(b.x*S,b.y*S,b.w*S,b.h*S);});if(target){mx.fillStyle='#ffaa00';mx.beginPath();mx.arc(target.x*S,target.y*S,4,0,Math.PI*2);mx.fill();}police.forEach(p=>{mx.fillStyle='#0044ff';mx.beginPath();mx.arc(p.x*S,p.y*S,2,0,Math.PI*2);mx.fill();});mx.fillStyle='#00ffe0';mx.beginPath();mx.arc(car.x*S,car.y*S,4,0,Math.PI*2);mx.fill();mx.strokeStyle='#00ffe0';mx.lineWidth=1;mx.strokeRect(0,0,110,110);}
+function updateHUD(){document.getElementById('cash-val').textContent='$'+Math.floor(state.cash);document.getElementById('car-val').textContent=CARS[state.selectedCar].name;document.getElementById('health-fill').style.width=state.health+'%';document.getElementById('nitro-fill').style.width=state.nitro+'%';document.getElementById('speed-val').textContent=Math.abs(Math.round(car.speed*20));for(let i=1;i<=5;i++)document.getElementById('s'+i).className='star'+(i<=state.wantedLevel?' active':'');}
+function startMission(id){const m=MISSIONS[id];state.currentMission=id;target={x:m.target.x,y:m.target.y};document.getElementById('mission-text').textContent=m.name;document.getElementById('mission-reward').textContent='Reward: $'+m.reward+' — Drive to target!';hideMissions();document.getElementById('main-menu').style.display='none';state.playing=true;showMsg('MISSION: '+m.name,m.story);saveState();}
+function completeMission(id){const m=MISSIONS[id];state.cash+=m.reward;if(!state.completedMissions.includes(id))state.completedMissions.push(id);state.currentMission=null;target=null;document.getElementById('mission-text').textContent='Mission Complete!';document.getElementById('mission-reward').textContent='+$'+m.reward+' earned!';for(let i=0;i<10;i++)addParticle(car.x+Math.random()*100-50,car.y+Math.random()*100-50,'#ffaa00');showMsg('MISSION COMPLETE!','You earned $'+m.reward+'\nTotal Cash: $'+Math.floor(state.cash));saveState();}
+function startGame(){document.getElementById('main-menu').style.display='none';state.playing=true;if(state.currentMission===null){target={x:1400,y:800};document.getElementById('mission-text').textContent='Explore Neo City!';document.getElementById('mission-reward').textContent='Open MISSIONS for objectives!';}showMsg('NEON RUSH','Welcome to Neo City!\n\nWASD or Arrow Keys to drive\nN = Nitro  Space = Drift\n\nOpen MISSIONS to start!');}
+function showMissions(){const el=document.getElementById('mission-screen'),list=document.getElementById('mission-list');el.style.display='flex';list.innerHTML='';MISSIONS.forEach((m,i)=>{const done=state.completedMissions.includes(i),locked=i>1&&!state.completedMissions.includes(i-1),cls=done?'completed':locked?'locked':'available',diffCls=m.diff==='easy'?'diff-easy':m.diff==='medium'?'diff-medium':'diff-hard';list.innerHTML+=`<div class="mission-card ${cls}"><div class="m-info"><div class="m-name">${m.name}</div><div class="m-desc">${m.desc}</div><div class="m-diff ${diffCls}">${m.diff.toUpperCase()}</div></div><div class="m-right"><div class="m-reward-text">$${m.reward}</div><div class="m-status">${done?'&#9989;':locked?'&#128274;':'&#127919;'}</div>${!done&&!locked?`<button class="start-btn" onclick="startMission(${i})">START</button>`:''}</div></div>`;});}
+function hideMissions(){document.getElementById('mission-screen').style.display='none';}
+function showGarage(){const el=document.getElementById('garage-screen'),list=document.getElementById('car-list');el.style.display='flex';document.getElementById('garage-cash').textContent='Cash: $'+Math.floor(state.cash);list.innerHTML='';CARS.forEach((c,i)=>{const owned=state.ownedCars.includes(i),selected=state.selectedCar===i,canBuy=state.cash>=c.price,spd=Math.round(c.speed/10*80),hdl=Math.round(c.handling/10*80),arm=Math.round(c.armor/10*80);list.innerHTML+=`<div class="car-card ${selected?'selected':owned?'owned':''}"><div style="display:flex;align-items:center;gap:12px"><div class="car-icon">${c.icon}</div><div class="car-info"><div class="c-name">${c.name}</div><div class="c-stats"><div class="c-stat">Speed <span class="stat-bar" style="width:${spd}px;background:${c.color}"></span></div><div class="c-stat">Handle <span class="stat-bar" style="width:${hdl}px;background:#00ff88"></span></div><div class="c-stat">Armor <span class="stat-bar" style="width:${arm}px;background:#ff8800"></span></div></div></div></div><div class="car-right"><div class="car-price">${c.price===0?'FREE':'$'+c.price}</div>${selected?'<div style="color:#aa00ff;font-size:12px;margin-top:6px">IN USE</div>':owned?`<button class="select-btn" onclick="selectCar(${i})">SELECT</button>`:`<button class="buy-btn" onclick="buyCar(${i})" ${canBuy?'':'disabled'}>${canBuy?'BUY':'NEED $'+c.price}</button>`}</div></div>`;});}
+function hideGarage(){document.getElementById('garage-screen').style.display='none';}
+function buyCar(id){const c=CARS[id];if(state.cash<c.price){showMsg('Not Enough Cash!','You need $'+c.price+'\nComplete more missions!');return;}state.cash-=c.price;state.ownedCars.push(id);selectCar(id);showGarage();saveState();}
+function selectCar(id){state.selectedCar=id;applyCar(id);showGarage();saveState();}
+function showMsg(title,sub){const m=document.getElementById('message');document.getElementById('msg-title').textContent=title;document.getElementById('msg-sub').textContent=sub;m.style.display='block';}
+function closeMessage(){document.getElementById('message').style.display='none';}
+requestAnimationFrame(update);
 </script>
 </body>
 </html>
